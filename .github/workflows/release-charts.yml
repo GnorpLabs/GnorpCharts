@@ -4,7 +4,7 @@ on:
     branches:
       - main
     paths:
-      - charts/*
+      - charts/**
   workflow_dispatch:
     inputs:
       target-scale-set:
