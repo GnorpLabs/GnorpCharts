@@ -1,0 +1,40 @@
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: sonarr-tv-shows
+# spec:
+#   claimName: 
+#   accessModes:
+#     - ReadWriteOnce
+#   resources:
+#     requests:
+#       storage: 32gb
+
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: sonarr-downloads
+# spec:
+#   storageClassName: freenas-iscsi-csi
+#   accessModes:
+#     - ReadWriteOnce
+#   resources:
+#     requests:
+#       storage: 32gb
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  {{- with .Values.volumes }}
+  name: {{ .name }}
+  {{- end}}
+spec:
+  accessModes:
+    - {{ .Values.volumes.accessMode | default "ReadWriteOnce" }}
+  resources:
+    requests:
+      storage: {{ .Values.volumes.size | default "32Gi"}}
+  {{- with .Values.volumes }}
+  storageClassName: {{ .storageClassName }}
+  {{- end}}
+

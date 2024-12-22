@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sonarr.fullname" . }}
+  labels:
+    {{- include "sonarr.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "sonarr.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "sonarr.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "sonarr.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: {{ .Chart.Name }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+          - name: http
+            containerPort: {{ .Values.service.port }}
+            protocol: TCP
+        livenessProbe:
+          {{- toYaml .Values.livenessProbe | nindent 12 }}
+        readinessProbe:
+          {{- toYaml .Values.readinessProbe | nindent 12 }}
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+        volumeMounts:
+        - name: library
+          mountPath: /library
+        {{- if .Values.persistence.library.subPath }}
+          subPath: {{ .Values.persistence.library.subPath }}
+        {{ end }}
+        - name: config
+          mountPath: /config
+        {{- if .Values.persistence.config.subPath }}
+          subPath: {{ .Values.persistence.config.subPath }}
+        {{ end }}
+        - name: downloads
+          mountPath: /downloads
+        {{- if .Values.persistence.downloads.subPath }}
+          subPath: {{ .Values.persistence.downloads.subPath }}
+        {{ end }}
+        {{-  range .Values.persistence.extralibrary }}
+        - mountPath: "/library-{{ .name }}"
+          name: "extralibrary-{{ .name }}"
+        {{- end }}
+        - name: shared
+          mountPath: /shared
+      volumes:
+      - name: library
+        persistentVolumeClaim:
+          {{- if .Values.persistence.library.claimName }}
+          claimName: "{{ .Values.persistence.library.claimName }}"
+          {{- else }}
+          claimName: "{{ template "sonarr.fullname" . }}-library"
+          {{- end }}
+      - name: config
+        persistentVolumeClaim:
+          {{- if .Values.persistence.config.claimName }}
+          claimName: "{{ .Values.persistence.config.claimName }}"
+          {{- else }}
+          claimName: "{{ template "sonarr.fullname" . }}-config"
+          {{- end }}
+      - name: downloads
+        {{- if .Values.persistence.downloads.enabled }}
+        persistentVolumeClaim:
+        {{- if .Values.persistence.downloads.claimName }}
+          claimName: "{{ .Values.persistence.downloads.claimName }}"
+        {{- else }}
+          claimName: "{{ template "sonarr.fullname" . }}-downloads"
+        {{- end }}
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

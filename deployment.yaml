@@ -1,0 +1,64 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name:  sonarr
+  labels:
+    name:  sonarr
+spec:
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name:  my-name
+    spec:
+      containers:
+      - image:  lscr.io/linuxserver/sonarr
+        name:  sonarr
+        resources:
+          requests:
+            cpu: "20m"
+            memory: "55M"
+          limits: 
+            cpu: "20m"
+            memory: "55M"
+        livenessProbe:
+          httpGet:
+            path: /_status/healthz
+            port: 5000
+          initialDelaySeconds: 90
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /_status/healthz
+            port: 5000
+          initialDelaySeconds: 30
+          timeoutSeconds: 10
+        env:
+        - name: PUID
+          value: 1000  
+        - name: PGID
+          value: 1000
+        - name: TZ
+          value: Etc/UTC 
+        ports:
+        - containerPort:  8989
+        volumeMounts:
+        - mountPath: /config
+          name: config
+        - mountPath: /tv
+          name: tv-shows
+        - mountPath: /downloads
+          name: downloads
+      volumes:
+        - name: config
+          storageClassName: freenas-iscsi-csi
+        - name: tv-shows
+          claimName: existing-tv-shows-pvc
+        - name: downloads
+          claimName: existing-downloads-pvc
+      restartPolicy: Always
+      imagePullPolicy: Always
