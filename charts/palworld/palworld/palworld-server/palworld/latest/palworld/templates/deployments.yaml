@@ -1,0 +1,252 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: "{{ .Release.Name }}-server"
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: "{{ .Release.Name }}-server"
+  strategy:
+    type: "{{ .Values.server.strategy }}"
+  template:
+    metadata:
+      annotations:
+        {{- with .Values.server.annotations }}
+        {{- toYaml . | nindent 4 }}
+        {{- end }}
+        checksum/configs: {{ include (print $.Template.BasePath "/configmaps.yaml") . | sha256sum }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+      labels:
+        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        app.kubernetes.io/name: "{{ .Release.Name }}-server"
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: "{{ .Release.Name }}-server"
+        app.kubernetes.io/version: {{ .Chart.AppVersion }}
+        {{- with .Values.server.labels }}
+        {{- toYaml . | nindent 4 }}
+        {{- end }}
+    spec:
+      containers:
+        {{ if .Values.server.service.healthz.enabled }}
+        - name: healthz
+          image: "chussenot/tiny-server:latest"
+          imagePullPolicy: {{ .Values.server.image.imagePullPolicy }}
+          ports:
+            - name: healthz
+              containerPort: 80
+              protocol: TCP
+        {{ end }}
+        - name: server
+          image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}"
+          imagePullPolicy: {{ .Values.server.image.imagePullPolicy }}
+          {{- with .Values.server.lifecycle }}
+          lifecycle:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- with .Values.server.resources }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          ports:
+            {{- with .Values.server.ports }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.server.probes.liveness }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.server.probes.readiness }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            {{- if .Values.server.config.rcon.enable }}
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                {{- if not .Values.server.config.rcon.externalPassword }}
+                  name: "{{ .Release.Name }}-rcon-password"
+                  key: "rconPassword"
+                {{- else }}
+                  name: "{{ .Values.server.config.rcon.externalPassword.name }}"
+                  key: "{{ .Values.server.config.rcon.externalPassword.key }}"
+                {{- end }}
+            {{- end }}
+            {{- if .Values.server.config.community.enable }}
+            - name: SERVER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                {{- if not .Values.server.config.community.externalPassword }}
+                  name: "{{ .Release.Name }}-community-password"
+                  key: "communityPassword"
+                {{- else }}
+                  name: "{{ .Values.server.config.community.externalPassword.name }}"
+                  key: "{{ .Values.server.config.community.externalPassword.key }}"
+                {{- end }}
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: "{{ .Release.Name }}-env-config"
+          volumeMounts:
+            - mountPath: /palworld
+              name: datadir
+            {{- if .Values.server.storage.backups }}
+            - mountPath: /palworld/backups
+              name: backups
+            {{- end }}
+            {{- range $index, $element := .Values.server.storage.extra }}
+            - mountPath: {{ $element.mountPath }}
+              readOnly: {{ $element.readOnly | default false }}
+              subPath: {{ $element.subPath | default "" }}
+              name: {{ $element.name }}
+            {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.server.terminationGracePeriodSeconds }}
+      {{- with .Values.server.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: datadir
+          persistentVolumeClaim:
+            {{- if not .Values.server.storage.main.external }}
+            claimName: "{{ .Release.Name }}-datadir-pvc"
+            {{ else }}
+            claimName: "{{ .Values.server.storage.main.externalName }}"
+            {{ end }}
+        {{- if .Values.server.storage.backups }}
+        - name: backups
+          {{- if .Values.server.storage.backups.persistentVolumeClaim }}
+          persistentVolumeClaim:
+            {{- if and .Values.server.storage.backups.persistentVolumeClaim (not .Values.server.storage.backups.persistentVolumeClaim.external) }}
+            claimName: "{{ .Release.Name }}-backups-pvc"
+            {{ else }}
+            claimName: "{{ .Values.server.storage.externalName }}"
+            {{ end }}
+          {{- else }}
+          {{ with .Values.server.storage.backups }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{ end }}
+        {{- end }}
+        {{- range $index, $element := .Values.server.storage.extra }}
+        {{- if $element.persistentVolumeClaim }}
+        - name: {{ $element.name }}
+          {{- if not $element.persistentVolumeClaim.external }}
+          persistentVolumeClaim:
+            claimName: "{{ $.Release.Name }}-{{ $element.name }}-pvc"
+          {{- else }}
+          persistentVolumeClaim:
+            claimName: "{{ $element.externalName }}"
+          {{- end }}
+        {{- else if $element.configMap }}
+        - name: {{ $element.name }}
+          configMap:
+            {{- toYaml $element.configMap | nindent 12 }}
+        {{- else if $element.secret }}
+        - name: {{ $element.name }}
+          secret:
+            {{- toYaml $element.secret | nindent 12 }}
+        {{- else if $element.downwardAPI }}
+        - name: {{ $element.name }}
+          downwardAPI:
+            {{- toYaml $element.downwardAPI | nindent 12 }}
+        {{- else if $element.projected }}
+        - name: {{ $element.name }}
+          projected:
+            {{- toYaml $element.projected | nindent 12 }}
+        {{- else if $element.emptyDir }}
+        - name: {{ $element.name }}
+          emptyDir:
+            {{- toYaml $element.emptyDir | nindent 12 }}
+        {{- else if $element.hostPath }}
+        - name: {{ $element.name }}
+          hostPath:
+            {{- toYaml $element.hostPath | nindent 12 }}
+        {{- else if $element.awsElasticBlockStore }}
+        - name: {{ $element.name }}
+          awsElasticBlockStore:
+            {{- toYaml $element.awsElasticBlockStore | nindent 12 }}
+        {{- else if $element.azureDisk }}
+        - name: {{ $element.name }}
+          azureDisk:
+            {{- toYaml $element.azureDisk | nindent 12 }}
+        {{- else if $element.azureFile }}
+        - name: {{ $element.name }}
+          azureFile:
+            {{- toYaml $element.azureFile | nindent 12 }}
+        {{- else if $element.cephfs }}
+        - name: {{ $element.name }}
+          cephfs:
+            {{- toYaml $element.cephfs | nindent 12 }}
+        {{- else if $element.cinder }}
+        - name: {{ $element.name }}
+          cinder:
+            {{- toYaml $element.cinder | nindent 12 }}
+        {{- else if $element.csi }}
+        - name: {{ $element.name }}
+          csi:
+            {{- toYaml $element.csi | nindent 12 }}
+        {{- else if $element.ephemeral }}
+        - name: {{ $element.name }}
+          ephemeral:
+            {{- toYaml $element.ephemeral | nindent 12 }}
+        {{- else if $element.fc }}
+        - name: {{ $element.name }}
+          fc:
+            {{- toYaml $element.fc | nindent 12 }}
+        {{- else if $element.flexVolume }}
+        - name: {{ $element.name }}
+          flexVolume:
+            {{- toYaml $element.flexVolume | nindent 12 }}
+        {{- else if $element.flocker }}
+        - name: {{ $element.name }}
+          flocker:
+            {{- toYaml $element.flocker | nindent 12 }}
+        {{- else if $element.gcePersistentDisk }}
+        - name: {{ $element.name }}
+          gcePersistentDisk:
+            {{- toYaml $element.gcePersistentDisk | nindent 12 }}
+        {{- else if $element.glusterfs }}
+        - name: {{ $element.name }}
+          glusterfs:
+            {{- toYaml $element.glusterfs | nindent 12 }}
+        {{- else if $element.iscsi }}
+        - name: {{ $element.name }}
+          iscsi:
+            {{- toYaml $element.iscsi | nindent 12 }}
+        {{- else if $element.nfs }}
+        - name: {{ $element.name }}
+          nfs:
+            {{- toYaml $element.nfs | nindent 12 }}
+        {{- else if $element.photonPersistentDisk }}
+        - name: {{ $element.name }}
+          photonPersistentDisk:
+            {{- toYaml $element.photonPersistentDisk | nindent 12 }}
+        {{- else if $element.portworxVolume }}
+        - name: {{ $element.name }}
+          portworxVolume:
+            {{- toYaml $element.portworxVolume | nindent 12 }}
+        {{- else if $element.quobyte }}
+        - name: {{ $element.name }}
+          quobyte:
+            {{- toYaml $element.quobyte | nindent 12 }}
+        {{- else if $element.rbd }}
+        - name: {{ $element.name }}
+          rbd:
+            {{- toYaml $element.rbd | nindent 12 }}
+        {{- else if $element.scaleIO }}
+        - name: {{ $element.name }}
+          scaleIO:
+            {{- toYaml $element.scaleIO | nindent 12 }}
+        {{- else if $element.storageos }}
+        - name: {{ $element.name }}
+          storageos:
+            {{- toYaml $element.storageos | nindent 12 }}
+        {{- else if $element.vsphereVolume }}
+        - name: {{ $element.name }}
+          vsphereVolume:
+            {{- toYaml $element.vsphereVolume | nindent 12 }}
+        {{ end }}
+        {{- end }}
