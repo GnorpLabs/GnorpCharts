@@ -1,0 +1,14 @@
+# Configarr
+/charts/configarr
+
+# Overseer
+/charts/overseer
+
+# Prowlarr
+/charts/prowlarr
+
+# Radarr
+/charts/radarr
+
+# Tautulli
+/charts/tautulli
