@@ -38,6 +38,17 @@ entries:
     urls:
     - https://github.com/GnorpLabs/GnorpCharts/releases/download/portainer-1.0.58/portainer-1.0.58.tgz
     version: 1.0.58
+  prowlarr:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2025-02-03T21:22:02.049773655Z"
+    description: A Helm chart for Kubernetes
+    digest: 87e44dbd162116552a5d483dca406bf428f87038fe3f728d77538a7ea1bd84c1
+    name: prowlarr
+    type: application
+    urls:
+    - https://github.com/GnorpLabs/GnorpCharts/releases/download/prowlarr-0.1.0/prowlarr-0.1.0.tgz
+    version: 0.1.0
   radarr:
   - apiVersion: v2
     appVersion: 1.16.0
@@ -83,4 +94,4 @@ entries:
     urls:
     - https://github.com/GnorpLabs/GnorpCharts/releases/download/tautulli-0.1.0/tautulli-0.1.0.tgz
     version: 0.1.0
-generated: "2025-02-03T21:21:12.337538086Z"
+generated: "2025-02-03T21:22:02.049784345Z"
