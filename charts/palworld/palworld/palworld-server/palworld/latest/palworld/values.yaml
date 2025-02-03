@@ -1,0 +1,263 @@
+# Server deployment annotations, labels, and resources limits
+#
+server:
+  annotations: {}
+  labels: {}
+  resources:
+    limits:
+      cpu: 4
+      memory: "12Gi"
+    requests:
+      cpu: 4
+      memory: "8Gi"
+
+  # Storage definitions related to the palworld-server
+  #
+  storage:
+    main:
+      external: false
+      externalName: ""
+
+      # Keeps helm from deleting the PVC, by default helm does not delete pvcs
+      #
+      preventDelete: false
+
+      size: 12Gi
+      storageClassName: ""
+
+    # If not specified, the backups will be stored on the `main` storage
+    #
+    # Supports all storage types as defined by https://kubernetes.io/docs/reference/kubernetes-api/config-and-storage-resources/volume/#Volume
+    #
+    # `persistentVolumeClaim` is a special case that matches the `main` storage in definition
+    backups: {}
+      # persistentVolumeClaim:
+      #   external: false
+      #   externalName: ""
+      #   preventDelete: false
+      #   size: 12Gi
+      #   storageClassName: ""
+
+      # nfs:
+      #   server: your.server.ip
+      #   path: /path/to/remote/dir
+
+    # Additional storage definitions
+    #
+    # Supports all storage types as defined by https://kubernetes.io/docs/reference/kubernetes-api/config-and-storage-resources/volume/#Volume
+    #
+    # THe objects supports configuring the mount path and the subpath.
+    # If external isn't true, the defined deletion prevention, storage class, and size will be used to create a new PVC
+    extra: []
+
+    # An example of using an existing PVC at a subpath
+    #
+    # - name: existing-pvc
+    #   mountPath: /existing-pvc
+    #   subPath: test
+    #   external: true
+    #   persistentVolumeClaim:
+    #     claimName: existing-pvc
+
+    # An example of creating a new PVC of 5Gi
+    #
+    # - name: new-pvc
+    #   mountPath: /new-pvc
+    #   size: 5Gi
+    #   preventDelete: false
+    #   storageClassName: "my-storage-class"
+    #   persistentVolumeClaim:
+    #     claimName: new-pvc
+
+    # An example of mounting a configmap with key `test.ini` as `config.ini` in /config
+    #
+    # - name: config
+    #   mountPath: /config
+    #   configMap:
+    #     name: app-configfile
+    #     items:
+    #     - key: test.ini
+    #       path: config.ini
+
+    # An example of mounting a secret
+    # - name: keys
+    #   mountPath: /keys
+    #   readOnly: true
+    #   secret:
+    #     secretName: app-keyfile
+
+    # An example of mounting an nfs volume
+    # - name: nfs
+    #   mountPath: /data
+    #   nfs:
+    #     server: your.server.ip
+    #     path: /path/to/dir
+
+  # Docker image used for the palworld-server deployment
+  #
+  image:
+    repository: thijsvanloef/palworld-server-docker
+    tag: v0.30.1
+    imagePullPolicy: IfNotPresent
+    imagePullSecrets: []
+
+  # Server-related ports
+  # Be sure your service.ports and config.ports matches this section
+  #
+  ports:
+  - name: game
+    containerPort: 8211
+    protocol: UDP
+
+  - name: query
+    containerPort: 27015
+    protocol: UDP
+
+  - name: rcon
+    containerPort: 25575
+    protocol: TCP
+
+  # Deployment strategy
+  #
+  strategy: Recreate
+
+  # Liveness and readiness probes
+  probes: {}
+    # liveness:
+    #   exec:
+    #     command:
+    #     - sh
+    #     - -c
+    #     - pgrep PalServer-Linux > /dev/null || exit 1
+    #   initialDelaySeconds: 30
+    # readiness:
+    #   exec:
+    #     command:
+    #     - sh
+    #     - -c
+    #     - rcon-cli Info | grep -q "Welcome to Pal Server"
+    #   initialDelaySeconds: 60
+
+  # Container lifecycle
+  terminationGracePeriodSeconds: 30
+  lifecycle:
+    preStop:
+      exec:
+        command:
+        - bash
+        - /usr/local/bin/backup
+
+  # Service configuration
+  #
+  service:
+    enabled: true
+    annotations: {}
+    labels: {}
+
+    # For minikube, set this to NodePort, elsewhere use LoadBalancer
+    # Use ClusterIP if your setup includes ingress controller
+    #
+    type: ClusterIP
+
+    # Use if you need to create a TCP health check for load balancers on cloud services.
+    #
+    healthz:
+      enabled: false
+      name: healthz
+      port: 80
+      protocol: TCP
+      targetPort: 80
+
+    # Port definitions for the service
+    # Be sure this matches the config section
+    #
+    ports:
+    - name: game
+      port: 8211
+      protocol: UDP
+      targetPort: 8211
+
+    - name: query
+      port: 27015
+      protocol: UDP
+      targetPort: 27015
+
+    - name: rcon
+      port: 25575
+      protocol: TCP
+      targetPort: 25575
+
+  # Palworld-server specific configuration
+  #
+  config:
+    annotations: {}
+    labels: {}
+    puid: 1000
+    pgid: 1000
+    port: 8211
+    query_port: 27015
+    max_players: 16
+    multithreading: true
+    rcon:
+      enable: true
+      port: 25575
+
+      # If not provided a random password will be generated and stored as a secret
+      #
+      password: ""
+
+      # If provided, the password will be loaded from an existing secret
+      externalPassword: {}
+        # The name of the secret containing the rcon password
+        # name: ""
+        # The key in the secret containing the rcon password
+        # key: ""
+
+    # Community server settings
+    #
+    community:
+      enable: true
+      password: ""
+      externalPassword: {}
+        # name: ""
+        # key: ""
+
+    # General server settings
+    server_name: ""
+    timezone: "UTC"
+    public_ip: ""
+    public_port: ""
+    server_description: ""
+
+    # Update or install the server when the container starts
+    # Must be enabled when the container first starts
+    #
+    update_on_boot: true
+
+    # Daily reboot configuration, disabled by default
+    #
+    daily_reboot:
+      enable: false
+
+      # Countdown in seconds to announce to players before the server is rebooted
+      countdown_seconds: 30
+
+      # UTC cron syntax for server reboot schedule, https://crontab.guru/
+      # Defaults to 9:30am UTC
+      #
+      time: "30 9 * * *"
+
+      # Name of the role and service account used to perform the daily reboot
+      #
+      role: "daily-reboot"
+      serviceAccount: "daily-reboot"
+
+    # Any additional environment variables related to the palworld-server-docker image
+    # -- Note, it's recommended to wrap values of the environment variables in quotes
+    # -- You can find a list of these environment variables in the palworld-server-docker readme
+    # -- https://github.com/thijsvanloef/palworld-server-docker/tree/main
+    #
+    env:
+      # When set to false the PalWorldServer.ini will be generated based on environment variables found here https://github.com/thijsvanloef/palworld-server-docker/blob/main/README.md
+      #
+      DISABLE_GENERATE_SETTINGS: "false"
