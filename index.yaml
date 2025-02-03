@@ -50,6 +50,17 @@ entries:
     urls:
     - https://github.com/GnorpLabs/GnorpCharts/releases/download/satisfactory-0.1.3/satisfactory-0.1.3.tgz
     version: 0.1.3
+  sonarr:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2025-02-03T21:19:53.264998983Z"
+    description: Smart PVR for newsgroup and bittorrent users
+    digest: e28c31ed874e4b09c3033dab689a4b2e935752d388e549e896175905c792f264
+    name: sonarr
+    type: application
+    urls:
+    - https://github.com/GnorpLabs/GnorpCharts/releases/download/sonarr-0.1.0/sonarr-0.1.0.tgz
+    version: 0.1.0
   tautulli:
   - apiVersion: v2
     appVersion: 1.16.0
@@ -61,4 +72,4 @@ entries:
     urls:
     - https://github.com/GnorpLabs/GnorpCharts/releases/download/tautulli-0.1.0/tautulli-0.1.0.tgz
     version: 0.1.0
-generated: "2025-02-03T18:16:51.669308724Z"
+generated: "2025-02-03T21:19:53.265009493Z"
