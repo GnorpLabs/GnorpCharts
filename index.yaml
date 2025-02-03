@@ -19,6 +19,17 @@ entries:
     urls:
     - https://github.com/GnorpLabs/GnorpCharts/releases/download/kube-plex-0.3.7/kube-plex-0.3.7.tgz
     version: 0.3.7
+  overseerr:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2025-02-03T21:24:22.851143706Z"
+    description: A Helm chart for Kubernetes
+    digest: 3386b7696a1e13813431d3d903f07c946e6b935ec17a34d98cfb17a3ee598221
+    name: overseerr
+    type: application
+    urls:
+    - https://github.com/GnorpLabs/GnorpCharts/releases/download/overseerr-0.1.0/overseerr-0.1.0.tgz
+    version: 0.1.0
   portainer:
   - apiVersion: v2
     appVersion: ce-latest-ee-2.21.4
@@ -94,4 +105,4 @@ entries:
     urls:
     - https://github.com/GnorpLabs/GnorpCharts/releases/download/tautulli-0.1.0/tautulli-0.1.0.tgz
     version: 0.1.0
-generated: "2025-02-03T21:22:02.049784345Z"
+generated: "2025-02-03T21:24:22.851150399Z"
