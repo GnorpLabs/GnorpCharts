@@ -1,5 +1,5 @@
 # Server deployment annotations, labels, and resources limits
-#
+# Default values for palworld helm chart
 server:
   annotations: {}
   labels: {}
