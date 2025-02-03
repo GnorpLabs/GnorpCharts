@@ -1,4 +1,4 @@
-# Default values for sonarr.
+# Default values for prowlarr helm chart.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
