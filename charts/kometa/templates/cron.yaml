@@ -1,0 +1,49 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "kometa.fullname" . }}
+spec:
+  schedule: {{ .Values.schedule }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+          containers:
+            - name: {{ .Chart.Name }}
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              args: [ "--run", "--read-only-config" ]
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+              volumeMounts:
+                - name: config
+                  mountPath: /config
+                - name: kometa-config
+                  mountPath: /config/config.yml
+                  subPath: {{.Values.persistence.config.subPath}}
+                - name: movie-config
+                  mountPath: /config/movies.yaml
+                  subPath: {{.Values.persistence.movie.subPath}}
+                - name: tv-config
+                  mountPath: /config/tv.yaml
+                  subPath: {{.Values.persistence.tv.subPath}}
+          volumes:
+            - name: config
+              persistentVolumeClaim:
+                {{- if .Values.persistence.config.claimName }}
+                claimName: "{{ .Values.persistence.config.claimName }}"
+                {{- else }}
+                claimName: "{{ template "kometa.fullname" . }}-config"
+                {{- end }}
+            - configMap:
+                name: {{ .Values.configmap.kometa.name }}
+              name: {{ .Values.configmap.kometa.name }}
+            - configMap:
+                name: {{ .Values.configmap.movie.name }}
+              name: {{ .Values.configmap.movie.name }}
+            - configMap:
+                name: {{ .Values.configmap.tv.name }}
+              name: {{ .Values.configmap.tv.name }}
+          restartPolicy: {{ .Values.restartPolicy }}
