@@ -7,25 +7,17 @@ replicaCount: 1
 
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 image:
-  repository: lscr.io/linuxserver/kometa
+  repository: kometateam/kometa
   # This sets the pull policy for images.
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
 
-schedule: "0 0 * * *"
-restartPolicy: OnFailure
-podSecurityContext: {}
-  # fsGroup: 2000
+namespace: "plex"
 
-securityContext:
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  runAsUser: 5000
-  runAsGroup: 1001
+schedule: "55 23 * * *"
+
+restartPolicy: OnFailure
 
 resources:
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -33,12 +25,17 @@ resources:
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
   # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
   limits:
-    cpu: 2
-    memory: 2Gi
+    cpu: 4
+    memory: 8Gi
   requests:
-    cpu: 1
-    memory: 128Mi
+    cpu: 2
+    memory: 4Gi
 
+securityContext:
+  runAsNonRoot: false
+  readOnlyRootFilesystem: false
+  runAsGroup: 1001
+  runAsUser: 5000
 
 #PVC for config
 persistence:
@@ -51,7 +48,7 @@ persistence:
     # If not specified and claimName is not specified, the default storage
     # class will be used.
     storageClass: "freenas-nfs-csi"
-    subPath: "config.yaml"
+    subPath: "config.yml"
     # The requested size of the volume to be used when creating a
     # PersistentVolumeClaim.
     size: 20Gi
@@ -60,7 +57,7 @@ persistence:
   movie:
     subPath: "movies.yaml"
   tv:
-    subPath: "tv-shows.yaml"
+    subPath: "tv.yaml"
   
 
 configmap:
@@ -104,26 +101,26 @@ configmap:
         playlist_sync_to_users: all
         verify_ssl: true
       plex:
-        url: http://PLEX_IP_HERE:32400
-        token: YOUR_TOKEN_HERE
+        url: http://plex-kube-plex.plex.svc.cluster.local:32400
+        token: FH41eg96itkEh3MUsSFM
         timeout: 60
         db_cache: 
         clean_bundles: false
         empty_trash: false
         optimize: false
       tmdb:
-        apikey: YOUR_API_KEY_HERE
+        apikey: ca45843d3f2a500a57b446624b77f59d
         language: en
       tautulli:
-        url: http://TAUTULLI_IP_HERE:8182
-        apikey: TAUTULLI_API_KEY_HERE
+        url: http://tautulli.plex.svc.cluster.local:8182
+        apikey: b241080342744045aa3e80f1ee4b5863
       omdb:
         apikey: OMDB_API_KEY
       radarr:
-        url: http://RADARR_IP_HERE:7878
-        token: RADARR_TOKEN_HERE
+        url: http://radarr.plex.svc.cluster.local:7878
+        token: b241080342744045aa3e80f1ee4b5863
         add_missing: false
-        root_folder_path: /movies
+        root_folder_path: /tv/Movies
         monitor: false
         availability: cinemas
         quality_profile: HD - 720p/1080p
@@ -133,11 +130,11 @@ configmap:
         radarr_path:
         plex_path:
       sonarr:
-        url: http://SONARR_IP_HERE:8989
-        token: SONARR_TOKEN_HERE
+        url: http://sonarr.plex.svc.cluster.local:9696
+        token: 581eac46d4a742bb86e24c776413e508
         add_missing: false
         add_existing: false
-        root_folder_path: /tv
+        root_folder_path: /tv/Shows
         monitor: pilot
         quality_profile: HD - 720p/1080p
         language_profile: English
@@ -161,11 +158,45 @@ configmap:
 
   movie:
     name: "movie-config"
-    data: "" 
+    config: | 
+      collections:
+        Trakt Popular:
+          trakt_popular: 200
+          collection_order: custom
+          sync_mode: sync
+          sort_title: Traktpopular
+          summary: The most popular movies for all time.
+          radarr_add_missing: false
+          radarr_search: false
+          radarr_monitor: false
+        Tautulli Most Popular Movies:
+          sync_mode: sync
+          collection_order: custom
+          tautulli_watched:
+            list_days: 180
+            list_size: 10
+            list_minimum: 1
   tv:
     name: "tv-config"
-    data: ""
-
+    config: |
+      collections:
+        Most Popular:
+          smart_label: originally_available.desc
+          sync_mode: sync
+          imdb_search:
+            type: tv_series, tv_mini_series
+            limit: 10
+          summary: The 10 most popular shows across the internet
+          sonarr_add_missing: false
+          sonarr_search: false
+          sonarr_monitor: pilot
+        Tautulli Most Popular:
+          sync_mode: sync
+          collection_order: custom
+          summary: The 10 most popular shows from Plex users
+          tautulli_popular:
+            list_days: 180
+            list_size: 10
 # Additional volumes on the output Deployment definition.
 volumes: []
 # - name: foo

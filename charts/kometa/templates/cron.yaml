@@ -2,6 +2,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: {{ include "kometa.fullname" . }}
+  namespace: {{ .Values.namespace }}
 spec:
   schedule: {{ .Values.schedule }}
   jobTemplate:
