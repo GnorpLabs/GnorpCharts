@@ -15,7 +15,7 @@ image:
 
 namespace: "plex"
 
-schedule: "08 18 * * *"
+schedule: "20 18 * * *"
 
 restartPolicy: OnFailure
 
@@ -77,7 +77,7 @@ configmap:
           collection_files:
             - file: config/tv.yaml
           overlay_files:
-          - file: config/overlay-config.yml
+          - file: config/overlays-config.yaml
           - pmm: status
             template_variables:
               text_airing: A I R I N G
@@ -243,7 +243,7 @@ configmap:
   overlays:
     enabled: true
     name: "overlays-config"
-    subPath: "overlay-config.yaml"
+    subPath: "overlays-config.yaml"
     config: |
       templates:
         4K_banner:

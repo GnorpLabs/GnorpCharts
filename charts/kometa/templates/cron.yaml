@@ -32,7 +32,7 @@ spec:
                   subPath: {{.Values.configmap.tv.subPath}}
                 {{- if .Values.configmap.overlays.enabled}}
                 - name: overlays-config
-                  mountPath: /config/tv.yaml
+                  mountPath: /config/overlays-config.yaml
                   subPath: {{.Values.configmap.overlays.subPath}}
                 {{- end }}
           volumes:
