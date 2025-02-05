@@ -23,13 +23,18 @@ spec:
                   mountPath: /config
                 - name: kometa-config
                   mountPath: /config/config.yml
-                  subPath: {{.Values.persistence.config.subPath}}
+                  subPath: {{.Values.configmap.kometa.subPath}}
                 - name: movie-config
                   mountPath: /config/movies.yaml
-                  subPath: {{.Values.persistence.movie.subPath}}
+                  subPath: {{.Values.configmap.movie.subPath}}
                 - name: tv-config
                   mountPath: /config/tv.yaml
-                  subPath: {{.Values.persistence.tv.subPath}}
+                  subPath: {{.Values.configmap.tv.subPath}}
+                {{- if .Values.configmap.overlays.enabled}}
+                - name: overlays-config
+                  mountPath: /config/tv.yaml
+                  subPath: {{.Values.configmap.overlays.subPath}}
+                {{- end }}
           volumes:
             - name: config
               persistentVolumeClaim:
@@ -47,4 +52,9 @@ spec:
             - configMap:
                 name: {{ .Values.configmap.tv.name }}
               name: {{ .Values.configmap.tv.name }}
+            {{- if .Values.configmap.overlays.enabled}}
+            - configMap:
+                name: {{ .Values.configmap.overlays.name }}
+              name: {{ .Values.configmap.overlays.name }}
+            {{- end }}
           restartPolicy: {{ .Values.restartPolicy }}
