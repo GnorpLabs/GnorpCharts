@@ -15,7 +15,7 @@ image:
 
 namespace: "plex"
 
-schedule: "20 18 * * *"
+schedule: "10 22 * * *"
 
 restartPolicy: OnFailure
 
@@ -64,20 +64,14 @@ configmap:
           collection_files:
             - file: config/movies.yaml
           overlay_files:
-            - file: config/overlays-config.yaml
+            - file: config/overlays.yaml
           remove_overlays: false
-          reapply_overlays: false
-          operations:
-            mass_content_rating_update: mdb_commonsense
-            split_duplicates: false       
-              configured: false           
-              managed: false              
-              less: 99999                 
+          reapply_overlays: false                 
         TV Shows:
           collection_files:
             - file: config/tv.yaml
           overlay_files:
-          - file: config/overlays-config.yaml
+          - file: config/overlays.yaml
           - pmm: status
             template_variables:
               text_airing: A I R I N G
@@ -155,7 +149,7 @@ configmap:
         cache_expiration: 60
       tautulli:
         url: http://tautulli.plex.svc.cluster.local:8181
-        apikey: b241080342744045aa3e80f1ee4b5863
+        apikey: a1ff92f827c94c0b93428ed22c6a3230
       omdb:
         apikey: OMDB_API_KEY
       radarr:
@@ -187,8 +181,8 @@ configmap:
         search: true
         cutoff_search: false
       trakt:
-        client_id: YOUR_CLIENT_ID_HERE
-        client_secret: YOUR_CLIENT_SECRET_HERE
+        client_id: 5362eff7a6df96e06de9a99f23bf4e0ac2f718b5a7406672ecfa9c0eed534928
+        client_secret: 70fa805e281aa6bfb1ecbf0940ff07ee1f5a0b1a03f46de8b2cb8d0848204ce8
         authorization:
             access_token: YOUR_ACCESS_TOKEN_HERE
             token_type: Bearer
@@ -243,7 +237,7 @@ configmap:
   overlays:
     enabled: true
     name: "overlays-config"
-    subPath: "overlays-config.yaml"
+    subPath: "overlays.yaml"
     config: |
       templates:
         4K_banner:

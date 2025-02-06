@@ -36,8 +36,8 @@ metadata:
 {{- if .Values.configmap.overlays.enabled}}
 apiVersion: v1
 data:
-  tv.yaml: |
-    {{ .Values.configmap.tv.config | nindent 4 }}
+  overlays.yaml: |
+    {{ .Values.configmap.overlays.config | nindent 4 }}
 
 kind: ConfigMap
 metadata:
