@@ -15,10 +15,8 @@ namespace: "plex"
 schedule: "0 0 * * *"
 successfulJobsHistoryLimit: 2
 failedJobsHistoryLimit: 2
-ttlSecondsAfterFinished: []
 concurrencyPolicy: "Replace"
 
-timezone: "America/New_York"
 
 restartPolicy: OnFailure
 
@@ -252,7 +250,8 @@ configmap:
           allowed_library_types: <<4K>>
       overlays:
         gradient:
-          plex_all: true
+          plex_search:
+            type: show
         4K_banner:
           template:
             name: 4K_banner
