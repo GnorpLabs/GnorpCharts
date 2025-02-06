@@ -1,5 +1,16 @@
 apiVersion: v1
 entries:
+  kometa:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2025-02-06T05:46:10.624901521Z"
+    description: A Helm chart for Kubernetes
+    digest: c1b66b362a8842ebd39872e7ceed5758ec96db4d5daca3bd81a0046ed130672f
+    name: kometa
+    type: application
+    urls:
+    - https://github.com/GnorpLabs/GnorpCharts/releases/download/kometa-0.1.0/kometa-0.1.0.tgz
+    version: 0.1.0
   kube-plex:
   - apiVersion: v1
     created: "2024-12-07T02:27:59.607603457Z"
@@ -105,4 +116,4 @@ entries:
     urls:
     - https://github.com/GnorpLabs/GnorpCharts/releases/download/tautulli-0.1.0/tautulli-0.1.0.tgz
     version: 0.1.0
-generated: "2025-02-03T21:24:22.851150399Z"
+generated: "2025-02-06T05:46:10.81043052Z"
