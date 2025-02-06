@@ -24,18 +24,17 @@ resources:
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
   # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  limits:
-    cpu: 4
-    memory: 8Gi
-  requests:
-    cpu: 2
-    memory: 4Gi
+  # limits:
+  #   cpu: 1
+  #   memory: 1Gi
+  # requests:
+  #   cpu: 1
+  #   memory: 1Gi
 
 securityContext:
   runAsNonRoot: false
-  readOnlyRootFilesystem: false
-  runAsGroup: 1001
-  runAsUser: 5000
+  runAsGroup: 1000
+  runAsUser: 1000
 
 #PVC for config
 persistence:
@@ -47,7 +46,7 @@ persistence:
     # Optionally specify a storage class to be used for the transcode directory.
     # If not specified and claimName is not specified, the default storage
     # class will be used.
-    storageClass: "freenas-nfs-csi"
+    storageClass: ""
     # The requested size of the volume to be used when creating a
     # PersistentVolumeClaim.
     size: 20Gi
@@ -136,25 +135,25 @@ configmap:
         overlay_artwork_filetype: jpg
         overlay_artwork_quality: 75
       plex:
-        url: https://plex.gnorplabs.cc:443
-        token: FH41eg96itkEh3MUsSFM
+        url: https://YourPlexURL:443
+        token: PLEX_TOKEN
         timeout: 60
         db_cache: 
         clean_bundles: false
         empty_trash: false
         optimize: false
       tmdb:
-        apikey: ca45843d3f2a500a57b446624b77f59d
+        apikey: TMDB_API_KEY
         language: en
         cache_expiration: 60
       tautulli:
         url: http://tautulli.plex.svc.cluster.local:8181
-        apikey: a1ff92f827c94c0b93428ed22c6a3230
+        apikey: TAUTULLI_API_KEY
       omdb:
         apikey: OMDB_API_KEY
       radarr:
         url: http://radarr.plex.svc.cluster.local:7878
-        token: b241080342744045aa3e80f1ee4b5863
+        token: RADARR_TOKEN
         add_missing: false
         add_existing: false
         upgrade_existing: false
@@ -168,7 +167,7 @@ configmap:
         ignore_cache: false
       sonarr:
         url: http://sonarr.plex.svc.cluster.local:8989
-        token: 581eac46d4a742bb86e24c776413e508
+        token: SONARR_TOKEN
         add_missing: false
         add_existing: false
         root_folder_path: /tv/Shows
@@ -181,8 +180,8 @@ configmap:
         search: true
         cutoff_search: false
       trakt:
-        client_id: 5362eff7a6df96e06de9a99f23bf4e0ac2f718b5a7406672ecfa9c0eed534928
-        client_secret: 70fa805e281aa6bfb1ecbf0940ff07ee1f5a0b1a03f46de8b2cb8d0848204ce8
+        client_id: TRAKT_CLIENT_ID
+        client_secret: TRAKT_CLIENT_SECRET
         authorization:
             access_token: YOUR_ACCESS_TOKEN_HERE
             token_type: Bearer
