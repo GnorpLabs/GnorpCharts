@@ -1,0 +1,365 @@
+# Default values for kometa cron job.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
+image:
+  repository: kometateam/kometa
+  # This sets the pull policy for images.
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+namespace: "plex"
+
+schedule: "0 0 * * *"
+successfulJobsHistoryLimit: 2
+failedJobsHistoryLimit: 2
+concurrencyPolicy: "Replace"
+
+
+restartPolicy: OnFailure
+
+resources:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 1
+  #   memory: 1Gi
+  # requests:
+  #   cpu: 1
+  #   memory: 1Gi
+
+securityContext:
+  runAsNonRoot: false
+  runAsGroup: 1000
+  runAsUser: 1000
+
+#PVC for config
+persistence:
+  config:
+    # Optionally specify claimName to manually override the PVC to be used for
+    # the config directory. If claimName is specified, storageClass and size
+    # are ignored.
+    # claimName: ""
+    # Optionally specify a storage class to be used for the transcode directory.
+    # If not specified and claimName is not specified, the default storage
+    # class will be used.
+    storageClass: ""
+    # The requested size of the volume to be used when creating a
+    # PersistentVolumeClaim.
+    size: 20Gi
+    # Access mode for this volume
+    accessMode: ReadWriteMany
+
+configmap:
+  kometa:
+    name: "kometa-config"
+    subPath: "config.yml"
+    config: | 
+      libraries:
+        Movies:
+          collection_files:
+            - file: config/movies.yaml
+          overlay_files:
+            - file: config/overlays.yaml
+          remove_overlays: false
+          reapply_overlays: false                 
+        TV Shows:
+          collection_files:
+            - file: config/tv.yaml
+          overlay_files:
+          - file: config/overlays.yaml
+          - pmm: status
+            template_variables:
+              text_airing: A I R I N G
+              text_returning: R E T U R N I N G
+              text_canceled: C A N C E L E D
+              text_ended: E N D E D
+              horizontal_align: center
+              vertical_offset: 55
+              vertical_align: bottom
+              font_color_airing: '#27C24C'
+              font_color_returning: '#FFA500'
+              font_color_canceled: '#ED1F1F'
+              font_color_ended: '#FF0000'
+              back_color: '#000000'
+              back_width_airing: 2000
+              back_width_returning: 2000
+              back_width_canceled: 2000
+              back_width_ended: 2000
+              back_height: 100
+              font_size: 80
+          assets_for_all: true 
+      settings:
+        run_order:
+        - overlays
+        - operations
+        - metadata
+        - collections
+        cache: true
+        cache_expiration: 60
+        asset_directory: config/assets
+        asset_folders: true
+        asset_depth: 0
+        create_asset_folders: false
+        prioritize_assets: false
+        dimensional_asset_rename: false
+        download_url_assets: false
+        show_missing_season_assets: false
+        show_missing_episode_assets: false
+        show_asset_not_needed: true
+        sync_mode: append
+        minimum_items: 1
+        default_collection_order: alpha
+        delete_below_minimum: true
+        delete_not_scheduled: false
+        run_again_delay: 2
+        missing_only_released: false
+        only_filter_missing: false
+        show_unmanaged: false
+        show_filtered: false
+        show_options: true
+        show_missing: false
+        show_missing_assets: false
+        save_report: false
+        tvdb_language: eng
+        ignore_ids:
+        ignore_imdb_ids:
+        playlist_sync_to_users: all
+        playlist_exclude_users:
+        playlist_report: false
+        verify_ssl: true
+        custom_repo:
+        overlay_artwork_filetype: jpg
+        overlay_artwork_quality: 75
+      plex:
+        url: https://YourPlexURL:443
+        token: PLEX_TOKEN
+        timeout: 60
+        db_cache: 
+        clean_bundles: false
+        empty_trash: false
+        optimize: false
+      tmdb:
+        apikey: TMDB_API_KEY
+        language: en
+        cache_expiration: 60
+      tautulli:
+        url: http://tautulli.plex.svc.cluster.local:8181
+        apikey: TAUTULLI_API_KEY
+      omdb:
+        apikey: OMDB_API_KEY
+      radarr:
+        url: http://radarr.plex.svc.cluster.local:7878
+        token: RADARR_TOKEN
+        add_missing: false
+        add_existing: false
+        upgrade_existing: false
+        monitor_existing: false
+        root_folder_path: /tv/Movies
+        monitor: false
+        availability: announced
+        quality_profile: HD - 720p/1080p
+        tag: kometa
+        search: false
+        ignore_cache: false
+      sonarr:
+        url: http://sonarr.plex.svc.cluster.local:8989
+        token: SONARR_TOKEN
+        add_missing: false
+        add_existing: false
+        root_folder_path: /tv/Shows
+        monitor: none
+        quality_profile: HD - 720p/1080p
+        language_profile: English
+        series_type: standard
+        season_folder: true
+        tag: kometa
+        search: true
+        cutoff_search: false
+      trakt:
+        client_id: TRAKT_CLIENT_ID
+        client_secret: TRAKT_CLIENT_SECRET
+        authorization:
+            access_token: YOUR_ACCESS_TOKEN_HERE
+            token_type: Bearer
+            expires_in: 7889237
+            refresh_token: YOUR_REFERSH_TOKEN_HERE
+            scope: public
+            created_at: 1642462048
+
+  movie:
+    name: "movie-config"
+    subPath: "movies.yaml"
+    config: | 
+      collections:
+        Trakt Popular:
+          trakt_popular: 200
+          collection_order: custom
+          sync_mode: sync
+          sort_title: Traktpopular
+          summary: The most popular movies for all time.
+          radarr_add_missing: false
+          radarr_search: false
+          radarr_monitor: false
+        Tautulli Most Popular Movies:
+          sync_mode: sync
+          collection_order: custom
+          tautulli_watched:
+            list_days: 180
+            list_size: 10
+            list_minimum: 1
+  tv:
+    name: "tv-config"
+    subPath: "tv.yaml"
+    config: |
+      collections:
+        Most Popular:
+          smart_label: originally_available.desc
+          sync_mode: sync
+          imdb_search:
+            type: tv_series, tv_mini_series
+            limit: 10
+          summary: The 10 most popular shows across the internet
+          sonarr_add_missing: false
+          sonarr_search: false
+          sonarr_monitor: pilot
+        Tautulli Most Popular:
+          sync_mode: sync
+          collection_order: custom
+          summary: The 10 most popular shows from Plex users
+          tautulli_popular:
+            list_days: 180
+            list_size: 10
+  overlays:
+    enabled: true
+    name: "overlays-config"
+    subPath: "overlays.yaml"
+    config: |
+      templates:
+        4K_banner:
+          default:
+            4K_banner: false
+          allowed_library_types: <<4K_banner>>
+        4K:
+          default:
+            4K: false
+          allowed_library_types: <<4K>>
+      overlays:
+        gradient:
+          plex_search:
+            type: show
+        4K_banner:
+          template:
+            name: 4K_banner
+          overlay:
+            name: 4K_banner
+          plex_search:
+            all:
+              resolution: "4K"
+        4K:
+          template:
+            name: 4K
+          overlay:
+            name: 4K
+            horizontal_offset: 0
+            horizontal_align: left
+            vertical_offset: 0
+            vertical_align: top
+          collection_level: episode
+          plex_search:
+            type: episodes
+            all:
+              resolution: "4K"
+        rating_high:
+          overlay:
+            name: Rating_High_BG
+            horizontal_offset: 0
+            horizontal_align: left
+            vertical_offset: 0
+            vertical_align: top
+            url: https://raw.githubusercontent.com/fscorrupt/Kometa-Overlays/main/ratings/Rating_High.png
+          plex_search:
+            all:
+              audience_rating.gte: 6.5
+        rating_mid:
+          overlay:
+            name: Rating_Mid_BG
+            horizontal_offset: 0
+            horizontal_align: left
+            vertical_offset: 0
+            vertical_align: top
+            url: https://raw.githubusercontent.com/fscorrupt/Kometa-Overlays/main/ratings/Rating_Mid.png
+          plex_search:
+            all:
+              audience_rating.gte: 4.5
+              audience_rating.lte: 6.4
+        rating_low:
+          overlay:
+            name: Rating_Low_BG
+            horizontal_offset: 0
+            horizontal_align: left
+            vertical_offset: 0
+            vertical_align: top
+            url: https://raw.githubusercontent.com/fscorrupt/Kometa-Overlays/main/ratings/Rating_Low.png
+          plex_search:
+            all:
+              audience_rating.gte: 0.1
+              audience_rating.lte: 4.4
+        user_rating_black:
+          overlay:
+            group: rating_text
+            weight: 20
+            rating_type: audience_rating
+            name: text(audience_rating)
+            horizontal_offset: -350
+            horizontal_align: center
+            vertical_offset: 70
+            vertical_align: top
+            font_size: 85
+            font_color: "#282a2d"
+          plex_search:
+            all:
+              audience_rating.gte: 4.5
+              audience_rating.lte: 6.4
+        user_rating:
+          overlay:
+            group: rating_text
+            weight: 10
+            rating_type: audience_rating
+            name: text(audience_rating)
+            horizontal_offset: -350
+            horizontal_align: center
+            vertical_offset: 70
+            vertical_align: top
+            font_size: 85
+            font_color: "#FFFFFF"
+          plex_search:
+            all:
+              audience_rating.gte: 0.1
+        Force-Filter:
+          overlay:
+            name: Force-Filter
+            url: https://raw.githubusercontent.com/fscorrupt/Kometa-Overlays/main/Force-Filter.png
+            vertical_align: bottom
+          plex_search:
+            all:
+              year.not: 1800
+          filters:
+            has_dolby_vision: true
+
+# Additional volumes on the output Deployment definition.
+volumes: []
+# - name: foo
+#   secret:
+#     secretName: mysecret
+#     optional: false
+
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts: []
+# - name: foo
+#   mountPath: "/etc/foo"
+#   readOnly: true

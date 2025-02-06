@@ -1,0 +1,46 @@
+apiVersion: v1
+data:
+  config.yml: |
+    {{ .Values.configmap.kometa.config | nindent 4 }}
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configmap.kometa.name }}
+  namespace: {{ .Values.namespace }}
+
+---
+
+apiVersion: v1
+data:
+  movies.yaml: |
+    {{ .Values.configmap.movie.config | nindent 4 }}
+
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configmap.movie.name }}
+  namespace: {{ .Values.namespace }}
+
+---
+
+apiVersion: v1
+data:
+  tv.yaml: |
+    {{ .Values.configmap.tv.config | nindent 4 }}
+
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configmap.tv.name }}
+  namespace: {{ .Values.namespace }}
+
+---
+
+{{- if .Values.configmap.overlays.enabled}}
+apiVersion: v1
+data:
+  overlays.yaml: |
+    {{ .Values.configmap.overlays.config | nindent 4 }}
+
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configmap.overlays.name }}
+  namespace: {{ .Values.namespace }}
+{{- end }}
