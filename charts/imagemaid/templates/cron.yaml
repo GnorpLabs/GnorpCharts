@@ -1,0 +1,89 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "imagemaid.fullname" . }}
+  namespace: {{ .Values.namespace }}
+spec:
+  schedule: {{ .Values.schedule }}
+  successfulJobsHistoryLimit: {{ .Values.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.failedJobsHistoryLimit }}
+  concurrencyPolicy: {{ .Values.concurrencyPolicy }}
+
+
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.backoffLimit }}
+      template:
+        spec:
+          securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+          containers:
+            - name: {{ .Chart.Name }}
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command: ["/bin/sh", "-c", "echo 'Job complete'"]
+              env:
+                - name: MODE
+                  value: {{ .Values.config.env.MODE | quote }} 
+                - name: PLEX_URL
+                  value: {{ .Values.config.env.PLEX_URL | quote }}
+                - name: PLEX_TOKEN
+                  value: {{ .Values.config.env.PLEX_TOKEN | quote }}
+                - name: DISCORD
+                  value: {{ .Values.config.env.DISCORD | quote }}
+                - name: TIMEOUT
+                  value: {{ .Values.config.env.TIMEOUT }}
+                - name: SLEEP
+                  value: {{ .Values.config.env.SLEEP }}
+                - name: IGNORE_RUNNING
+                  value: {{ .Values.config.env.IGNORE_RUNNING }}
+                - name: LOCAL_DB
+                  value: {{ .Values.config.env.LOCAL_DB }}
+                - name: USE_EXISTING
+                  value: {{ .Values.config.env.USE_EXISTING }}
+                - name: PHOTO_TRANSCODER
+                  value: {{ .Values.config.env.PHOTO_TRANSCODER }}
+                - name: EMPTY_TRASH
+                  value: {{ .Values.config.env.EMPTY_TRASH }}
+                - name: CLEAN_BUNDLES
+                  value: {{ .Values.config.env.CLEAN_BUNDLES }}
+                - name: OPTIMIZE_DB
+                  value: {{ .Values.config.env.OPTIMIZE_DB }}
+                - name: TRACE
+                  value: {{ .Values.config.env.TRACE }}
+                - name: LOG_REQUESTS
+                  value: {{ .Values.config.env.LOG_REQUESTS }}
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+              volumeMounts:
+                - name: config
+                  mountPath: /config
+                - name: plex
+                  mountPath: /plex
+                {{- if .Values.config.configMap.enabled }}
+                - name: configmap
+                  mountPath: /config/.env
+                  subPath: {{.Values.config.configMap.config.subPath}}
+                {{- end }}
+          volumes:
+            - name: config
+              persistentVolumeClaim:
+                {{- if .Values.persistence.config.claimName }}
+                claimName: "{{ .Values.persistence.config.claimName }}"
+                {{- else }}
+                claimName: "{{ template "imagemaid.fullname" . }}-config"
+                {{- end }}
+            - name: plex
+              persistentVolumeClaim:
+                {{- if .Values.persistence.plex.claimName }}
+                claimName: "{{ .Values.persistence.plex.claimName }}"
+                {{- else }}
+                claimName: "{{ template "imagemaid.fullname" . }}-plex"
+                {{- end }}
+            {{- if .Values.config.configMap.enabled }}
+            - configMap:
+                name: {{ .Values.config.configmap.config.name }}
+              name: {{ .Values.config.configmap.config.name }}
+            {{- end }}
+
+          restartPolicy: {{ .Values.restartPolicy }}

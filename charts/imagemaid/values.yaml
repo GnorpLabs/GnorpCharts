@@ -1,0 +1,177 @@
+# Default values for imagemaid.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
+image:
+  repository: kometateam/imagemaid
+  # This sets the pull policy for images.
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+# This is for setting the restart policy for the pod more information can be found here: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/
+restartPolicy: unless-stopped
+
+# Namespace to deploy imagemaid
+namespace: "default"
+
+# This is for the secretes for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+imagePullSecrets: []
+# This is to override the chart name.
+nameOverride: ""
+fullnameOverride: ""
+
+# This is for setting the schedule for the cron job more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
+schedule: "0 0 * * *"
+
+backoffLimit: 6
+
+successfulJobsHistoryLimit: 2
+failedJobsHistoryLimit: 2
+concurrencyPolicy: "Forbid"
+
+# There are multiple ways in image maid to configure the script.
+# You can use a config map or env variables. 
+# Either one is acceptable however do not enable both at the same time.
+config:
+  env:
+    enabled: true
+    MODE: "report"
+    PLEX_URL: "http://plex:32400"
+    PLEX_TOKEN: "token"
+    DISCORD: "https://discord.com/api/webhooks/###################/####################################"
+    TIMEOUT: 600
+    SLEEP: 60
+    IGNORE_RUNNING: False
+    LOCAL_DB: False
+    USE_EXISTING: false
+    PHOTO_TRANSCODER: False
+    EMPTY_TRASH: FALSE
+    CLEAN_BUNDLES: False
+    OPTIMIZE_DB: False
+    TRACE: False
+    LOG_REQUESTS: False
+  configMap: 
+    enabled: false
+    config:
+      # ConfigMap to be used for the config
+      name: ".env"
+      subPath: ".env"
+      data: |
+        PLEX_PATH=C:\Plex Media Server
+        MODE=report
+        PLEX_URL=http://192.168.1.12:32400
+        PLEX_TOKEN=123456789
+        DISCORD=https://discord.com/api/webhooks/###################/####################################################################
+        TIMEOUT=600
+        SLEEP=60
+        IGNORE_RUNNING=False
+        LOCAL_DB=False
+        USE_EXISTING=False
+        PHOTO_TRANSCODER=False
+        EMPTY_TRASH=False
+        CLEAN_BUNDLES=False
+        OPTIMIZE_DB=False
+        TRACE=False
+        LOG_REQUESTS=False
+
+#PVC for config & plex
+persistence:
+  config:
+    # Optionally specify claimName to manually override the PVC to be used for
+    # the config directory. If claimName is specified, storageClass and size
+    # are ignored.
+    # claimName: ""
+    # Optionally specify a storage class to be used for the transcode directory.
+    # If not specified and claimName is not specified, the default storage
+    # class will be used.
+    storageClass: ""
+    # The requested size of the volume to be used when creating a
+    # PersistentVolumeClaim.
+    size: 20Gi
+    # Access mode for this volume
+    accessMode: ReadWriteMany 
+  plex:
+    # Optionally specify claimName to manually override the PVC to be used for
+    # the config directory. If claimName is specified, storageClass and size
+    # are ignored.
+    # claimName: ""
+    # Optionally specify a storage class to be used for the transcode directory.
+    # If not specified and claimName is not specified, the default storage
+    # class will be used.
+    storageClass: ""
+    # The requested size of the volume to be used when creating a
+    # PersistentVolumeClaim.
+    size: 20Gi
+    # Access mode for this volume
+    accessMode: ReadWriteMany 
+
+# This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# This is for setting Kubernetes Annotations to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+podAnnotations: {}
+# This is for setting Kubernetes Labels to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+# This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+# Additional volumes on the output Deployment definition.
+volumes: []
+# - name: foo
+#   secret:
+#     secretName: mysecret
+#     optional: false
+
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts: []
+# - name: foo
+#   mountPath: "/etc/foo"
+#   readOnly: true
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
