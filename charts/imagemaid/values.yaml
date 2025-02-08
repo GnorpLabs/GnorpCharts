@@ -11,10 +11,10 @@ image:
   tag: "latest"
 
 # This is for setting the restart policy for the pod more information can be found here: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/
-restartPolicy: unless-stopped
+restartPolicy: "OnFailure"
 
 # Namespace to deploy imagemaid
-namespace: "default"
+namespace: "plex"
 
 # This is for the secretes for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 imagePullSecrets: []
@@ -23,7 +23,7 @@ nameOverride: ""
 fullnameOverride: ""
 
 # This is for setting the schedule for the cron job more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
-schedule: "0 0 * * *"
+schedule: "17 19 * * *"
 
 backoffLimit: 6
 
@@ -38,9 +38,10 @@ config:
   env:
     enabled: true
     MODE: "report"
-    PLEX_URL: "http://plex:32400"
-    PLEX_TOKEN: "token"
-    DISCORD: "https://discord.com/api/webhooks/###################/####################################"
+    PLEX_PATH: ""
+    PLEX_URL: ""
+    PLEX_TOKEN: ""
+    DISCORD: ""
     TIMEOUT: 600
     SLEEP: 60
     IGNORE_RUNNING: False
@@ -59,11 +60,10 @@ config:
       name: ".env"
       subPath: ".env"
       data: |
-        PLEX_PATH=C:\Plex Media Server
         MODE=report
-        PLEX_URL=http://192.168.1.12:32400
-        PLEX_TOKEN=123456789
-        DISCORD=https://discord.com/api/webhooks/###################/####################################################################
+        PLEX_URL=
+        PLEX_TOKEN=
+        DISCORD=
         TIMEOUT=600
         SLEEP=60
         IGNORE_RUNNING=False
@@ -91,12 +91,12 @@ persistence:
     # PersistentVolumeClaim.
     size: 20Gi
     # Access mode for this volume
-    accessMode: ReadWriteMany 
+    accessMode: ReadWriteOnce 
   plex:
     # Optionally specify claimName to manually override the PVC to be used for
     # the config directory. If claimName is specified, storageClass and size
     # are ignored.
-    # claimName: ""
+    claimName: ""
     # Optionally specify a storage class to be used for the transcode directory.
     # If not specified and claimName is not specified, the default storage
     # class will be used.
@@ -137,17 +137,17 @@ securityContext: {}
   # runAsNonRoot: true
   # runAsUser: 1000
 
-resources: {}
+resources:
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
   # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+  limits:
+    cpu: 4
+    memory: 8Gi
+  requests:
+    cpu: 2
+    memory: 2Gi
 
 # This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
 autoscaling:
@@ -157,14 +157,15 @@ autoscaling:
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
-# Additional volumes on the output Deployment definition.
+
+# # Additional volumes on the output Deployment definition.
 volumes: []
 # - name: foo
 #   secret:
 #     secretName: mysecret
 #     optional: false
 
-# Additional volumeMounts on the output Deployment definition.
+# # Additional volumeMounts on the output Deployment definition.
 volumeMounts: []
 # - name: foo
 #   mountPath: "/etc/foo"
