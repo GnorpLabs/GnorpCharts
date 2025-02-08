@@ -1,0 +1,94 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "imagemaid.fullname" . }}
+  namespace: {{ .Values.namespace }}
+spec:
+  schedule: {{ .Values.schedule }}
+  successfulJobsHistoryLimit: {{ .Values.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.failedJobsHistoryLimit }}
+  concurrencyPolicy: {{ .Values.concurrencyPolicy }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.backoffLimit }}
+      template:
+        spec:
+          securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+          containers:
+            - name: {{ .Chart.Name }}
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              env:
+                - name: MODE
+                  value: {{ .Values.config.env.MODE | quote }} 
+                - name: PLEX_PATH
+                  value: {{ .Values.config.env.PLEX_PATH | quote }}
+                - name: PLEX_URL
+                  value: {{ .Values.config.env.PLEX_URL | quote }}
+                - name: PLEX_TOKEN
+                  value: {{ .Values.config.env.PLEX_TOKEN | quote }}
+                - name: DISCORD
+                  value: {{ .Values.config.env.DISCORD | quote }}
+                - name: TIMEOUT
+                  value: {{ .Values.config.env.TIMEOUT | quote}}
+                - name: SLEEP
+                  value: {{ .Values.config.env.SLEEP | quote }}
+                - name: IGNORE_RUNNING
+                  value: {{ .Values.config.env.IGNORE_RUNNING | quote}}
+                - name: LOCAL_DB
+                  value: {{ .Values.config.env.LOCAL_DB | quote }}
+                - name: USE_EXISTING
+                  value: {{ .Values.config.env.USE_EXISTING | quote }}
+                - name: PHOTO_TRANSCODER
+                  value: {{ .Values.config.env.PHOTO_TRANSCODER | quote }}
+                - name: EMPTY_TRASH
+                  value: {{ .Values.config.env.EMPTY_TRASH | quote}}
+                - name: CLEAN_BUNDLES
+                  value: {{ .Values.config.env.CLEAN_BUNDLES | quote }}
+                - name: OPTIMIZE_DB
+                  value: {{ .Values.config.env.OPTIMIZE_DB | quote }}
+                - name: TRACE
+                  value: {{ .Values.config.env.TRACE | quote }}
+                - name: LOG_REQUESTS
+                  value: {{ .Values.config.env.LOG_REQUESTS | quote }}
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+              volumeMounts:
+                - name: config
+                  mountPath: /config
+                - name: plex
+                  mountPath: /plex
+              {{- if .Values.config.configMap.enabled }}
+                - name: configmap
+                  mountPath: /config/.env
+                  subPath: {{.Values.config.configMap.config.subPath}}
+              {{- end }}
+              {{- if .Values.volumeMounts -}}
+                {{- toYaml .Values.volumeMounts | nindent 12 }}
+              {{- end }}
+          volumes:
+            - name: config
+              persistentVolumeClaim:
+                {{- if .Values.persistence.config.claimName }}
+                claimName: "{{ .Values.persistence.config.claimName }}"
+                {{- else }}
+                claimName: "{{ template "imagemaid.fullname" . }}-config"
+                {{- end }}
+            - name: plex
+              persistentVolumeClaim:
+                {{- if .Values.persistence.plex.claimName }}
+                claimName: "{{ .Values.persistence.plex.claimName }}"
+                {{- else }}
+                claimName: "{{ template "imagemaid.fullname" . }}-plex"
+                {{- end }}
+            {{- if .Values.config.configMap.enabled }}
+            - configMap:
+                name: {{ .Values.config.configmap.config.name }}
+              name: {{ .Values.config.configmap.config.name }}
+            {{- end }}
+          {{- if .Values.volumes -}}
+            {{- toYaml .Values.volumes | nindent 12 }}
+          {{- end }}
+
+          restartPolicy: {{ .Values.restartPolicy }}
