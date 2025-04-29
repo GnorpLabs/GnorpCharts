@@ -14,21 +14,21 @@ spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.gamePort }}
-      targetPort: game
+      targetPort: {{ .Values.service.gamePort }}
       protocol: UDP
       name: game
       {{- if (and $setNodePorts (not (empty .Values.service.gameNodePort))) }}
       nodePort: {{ .Values.service.gameNodePort }}
       {{- end }}
     - port: {{ .Values.service.queryPort }}
-      targetPort: query
+      targetPort: {{ .Values.service.queryPort }}
       protocol: UDP
       name: query
       {{- if (and $setNodePorts (not (empty .Values.service.queryNodePort))) }}
       nodePort: {{ .Values.service.queryNodePort }}
       {{- end }}
     - port: {{ .Values.service.rconPort }}
-      targetPort: rcon
+      targetPort: {{ .Values.service.rconPort }}
       protocol: TCP
       name: rcon
       {{- if (and $setNodePorts (not (empty .Values.service.rconNodePort))) }}
