@@ -1,0 +1,9 @@
+apiVersion: v2
+appVersion: latest
+description: V Rising Helm chart for Kubernetes
+home: https://github.com/korax-dev/helm-charts
+name: vrising
+sources:
+- https://github.com/korax-dev/helm-charts
+- https://github.com/TrueOsiris/docker-vrising
+version: 0.1.1
