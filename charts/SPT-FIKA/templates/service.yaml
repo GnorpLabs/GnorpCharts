@@ -6,10 +6,16 @@ metadata:
     {{- include "SPT-FIKA.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
+  {{- if eq .Values.service.type "LoadBalancer"}}
+  externalIPs:
+  {{- range $externalIP := .Values.service.server-service.externalIPs }}
+    - {{ $externalIP }}
+  {{- end }}
+  {{- end }}
   ports:
-    - port: {{ .Values.service.port }}
-      targetPort: http
-      protocol: TCP
-      name: http
+    - port: {{ .Values.service.server-service.port }}
+      targetPort: server-service
+      protocol: {{ .Values.service.server-service.protocol}}
+      name: server-service
   selector:
     {{- include "SPT-FIKA.selectorLabels" . | nindent 4 }}

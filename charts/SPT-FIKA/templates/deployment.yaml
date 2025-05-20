@@ -5,9 +5,9 @@ metadata:
   labels:
     {{- include "SPT-FIKA.labels" . | nindent 4 }}
 spec:
-  {{- if not .Values.autoscaling.enabled }}
+{{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
-  {{- end }}
+{{- end }}
   selector:
     matchLabels:
       {{- include "SPT-FIKA.selectorLabels" . | nindent 6 }}
@@ -27,52 +27,58 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "SPT-FIKA.serviceAccountName" . }}
-      {{- with .Values.podSecurityContext }}
-      securityContext:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
       containers:
-        - name: {{ .Chart.Name }}
+        - name: spt-fika-server
           {{- with .Values.securityContext }}
-          securityContext:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          image: "{{ .Values.spt-fika-image.repository }}:{{ .Values.spt-fika-image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.spt-fika-image.pullPolicy }}
           ports:
-            - name: http
-              containerPort: {{ .Values.service.port }}
-              protocol: TCP
-          {{- with .Values.livenessProbe }}
-          livenessProbe:
+            - name: server-service
+              containerPort: {{ .Values.service.server-service.port }}
+              protocol: {{ .Values.service.server-service.protocol }}
+          env:
+            - name: UID
+              value: "{{ .Values.enviornment.UID }}"
+            - name: GID
+              value: "{{ .Values.enviornment.GID }}"
+            - name: INSTALL_FIKA
+              value: "{{ .Values.enviornment.INSTALL_FIKA }}"
+            - name: FIKA_VERSION
+              value: "{{ .Values.enviornment.FIKA_VERSION }}"
+            - name: AUTO_UPDATE_FIKA
+              value: "{{ .Values.enviornment.AUTO_UPDATE_FIKA }}"
+            - name: AUTO_UPDATE_SPT
+              value: "{{ .Values.enviornment.AUTO_UPDATE_SPT }}"
+            - name: INSTALL_OTHER_MODS
+              value: "{{ .Values.enviornment.INSTALL_OTHER_MODS }}"
+            - name: MOD_URLS_TO_DOWNLOAD
+              value: "{{ .Values.enviornment.MOD_URLS_TO_DOWNLOAD }}"
+            - name: TAKE_OWNERSHIP
+              value: "{{ .Values.enviornment.TAKE_OWNERSHIP }}"
+            - name: CHANGE_PERMISSIONS 
+              value: "{{ .Values.enviornment.CHANGE_PERMISSIONS }}"
+            - name: ENABLE_PROFILE_BACKUP
+              value: "{{ .Values.enviornment.ENABLE_PROFILE_BACKUP }}"
+            - name: LISTEN_ALL_NETWORKS
+              value: "{{ .Values.enviornment.LISTEN_ALL_NETWORKS }}"
+            - name: TZ
+              value: "{{ .Values.enviornment.TZ }}"
+            - name: NUM_HEADLESS_PROFILES
+              value: "{{ .Values.enviornment.NUM_HEADLESS_PROFILES }}"
+            {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- with .Values.readinessProbe }}
-          readinessProbe:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- with .Values.resources }}
-          resources:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- with .Values.volumeMounts }}
+            {{- end }}
           volumeMounts:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-      {{- with .Values.volumes }}
+          - name: server
+            mountPath: /opt/server
+            {{- if .Values.persistence.server.subPath }}
+            subPath: {{ .Values.persistence.server.subPath }}
+            {{- end }}
       volumes:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        - name: server
+          persistentVolumeClaim:
+            {{- if .Values.persistence.server.claimName }}
+            claimName: "{{ .Values.persistence.server.claimName }}"
+            {{- else }}
+            claimName: "{{ template "SPT-FIKA.fullname" . }}-config"
+            {{- end }}
