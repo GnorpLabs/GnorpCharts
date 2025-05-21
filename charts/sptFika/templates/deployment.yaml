@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "SPT-FIKA.fullname" . }}
+  name: {{ include "sptFika.fullname" .}}
   labels:
-    {{- include "SPT-FIKA.labels" . | nindent 4 }}
+    {{- include "sptFika.labels" . | nindent 4 }}
 spec:
 {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
 {{- end }}
   selector:
     matchLabels:
-      {{- include "SPT-FIKA.selectorLabels" . | nindent 6 }}
+      {{- include "sptFika.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -18,7 +18,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "SPT-FIKA.labels" . | nindent 8 }}
+        {{- include "sptFika.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -28,14 +28,13 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
-        - name: spt-fika-server
-          {{- with .Values.securityContext }}
-          image: "{{ .Values.spt-fika-image.repository }}:{{ .Values.spt-fika-image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.spt-fika-image.pullPolicy }}
+        - name: spt-fika
+          image: "{{ .Values.sptFika.repository }}:{{ .Values.sptFika.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.sptFika.pullPolicy }}
           ports:
-            - name: server-service
-              containerPort: {{ .Values.service.server-service.port }}
-              protocol: {{ .Values.service.server-service.protocol }}
+            - name: server 
+              containerPort: {{ .Values.service.serverService.port }}
+              protocol: {{ .Values.service.serverService.protocol }}
           env:
             - name: UID
               value: "{{ .Values.enviornment.UID }}"
@@ -74,11 +73,23 @@ spec:
             {{- if .Values.persistence.server.subPath }}
             subPath: {{ .Values.persistence.server.subPath }}
             {{- end }}
+          - name: users
+            mountPath: /opt/server/user
+            {{- if .Values.persistence.users.subPath }}
+            subPath: {{ .Values.persistence.users.subPath }}
+            {{- end }}
       volumes:
         - name: server
           persistentVolumeClaim:
             {{- if .Values.persistence.server.claimName }}
             claimName: "{{ .Values.persistence.server.claimName }}"
             {{- else }}
-            claimName: "{{ template "SPT-FIKA.fullname" . }}-config"
+            claimName: "{{ template "sptFika.fullname" . }}-server"
+            {{- end }}
+        - name: users
+          persistentVolumeClaim:
+            {{- if .Values.persistence.users.claimName }}
+            claimName: "{{ .Values.persistence.users.claimName }}"
+            {{- else }}
+            claimName: "{{ template "sptFika.fullname" . }}-users"
             {{- end }}

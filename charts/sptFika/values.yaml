@@ -6,7 +6,7 @@
 replicaCount: 1
 
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
-spt-fika-image:
+sptFika:
   repository: ghcr.io/zhliau/fika-spt-server-docker
   # This sets the pull policy for images.
   pullPolicy: IfNotPresent
@@ -31,10 +31,10 @@ podLabels: {}
 # This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
 service:
   type: LoadBalancer
-  server-service:
+  serverService:
     port: 6969
     protocol: TCP
-    # externalIPs: ""
+
 
 # This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
 ingress:
@@ -63,11 +63,11 @@ autoscaling:
   # targetMemoryUtilizationPercentage: 80
 
 # Container environment variables
-environment:
+enviornment:
   UID: "5000"
   GID: "1001"
   INSTALL_FIKA: "true"
-  FIKA_VERSION: "V2.4.7"
+  FIKA_VERSION: "v2.4.8"
   AUTO_UPDATE_FIKA: "true"
   AUTO_UPDATE_SPT: "true"
   INSTALL_OTHER_MODS: "false"
@@ -97,6 +97,21 @@ persistence:
     # subPath: ""
     # The requested size of the volume to be used when creating a
     # PersistentVolumeClaim.
-    size: 20Gi
+    size: 100Gi
     # Access mode for this volume
     accessMode: ReadWriteOnce
+  users:
+    # Optionally specify claimName to manually override the PVC to be used for
+    # the config directory. If claimName is specified, storageClass and size
+    # are ignored.
+    # claimName: ""
+    # Optionally specify a storage class to be used for the transcode directory.
+    # If not specified and claimName is not specified, the default storage
+    # class will be used.
+    storageClass: "freenas-nfs-csi"
+    subPath: "user"
+    # The requested size of the volume to be used when creating a
+    # PersistentVolumeClaim.
+    size: 10Gi
+    # Access mode for this volume
+    accessMode: ReadWriteMany

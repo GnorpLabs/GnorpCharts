@@ -2,9 +2,9 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "SPT-FIKA.fullname" . }}
+  name: {{ include "sptFika.fullname" . }}
   labels:
-    {{- include "SPT-FIKA.labels" . | nindent 4 }}
+    {{- include "sptFika.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -35,9 +35,9 @@ spec:
             {{- end }}
             backend:
               service:
-                name: {{ include "SPT-FIKA.fullname" $ }}
+                name: {{ include "sptFika.fullname" $ }}
                 port:
-                  number: {{ $.Values.service.server-service.port }}
+                  number: {{ $.Values.service.serverService.port }}
           {{- end }}
     {{- end }}
 {{- end }}

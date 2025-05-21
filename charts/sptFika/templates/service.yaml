@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sptFika.fullname" . }}
+  labels:
+    {{- include "sptFika.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - name: server
+      port: {{ .Values.service.serverService.port }}
+      targetPort: server
+      protocol: {{ .Values.service.serverService.protocol}}
+      
+  selector:
+    {{- include "sptFika.selectorLabels" . | nindent 4 }}
