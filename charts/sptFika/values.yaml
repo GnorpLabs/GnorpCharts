@@ -13,6 +13,14 @@ sptFika:
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
 
+fikaHeadless:
+  repository: ghcr.io/zhliau/fika-headless-docker
+  # This sets the pull policy for images.
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+# This sets the pull policy for images.
+
 # This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 imagePullSecrets: []
 # This is to override the chart name.
@@ -34,6 +42,9 @@ service:
   serverService:
     port: 6969
     protocol: TCP
+  headlessService:
+    port: 25565
+    protocol: UDP
 
 
 # This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
@@ -70,14 +81,31 @@ enviornment:
   FIKA_VERSION: "v2.4.8"
   AUTO_UPDATE_FIKA: "true"
   AUTO_UPDATE_SPT: "true"
-  INSTALL_OTHER_MODS: "false"
-  MOD_URLS_TO_DOWNLOAD: ""
+  INSTALL_OTHER_MODS: "true"
+  MOD_URLS_TO_DOWNLOAD: "https://github.com/project-fika/Fika-Headless/releases/download/v1.3.7/Fika.Headless.1.3.7.zip"
   TAKE_OWNERSHIP: "true"
   CHANGE_PERMISSIONS: "true"
   ENABLE_PROFILE_BACKUP: "true" 
   LISTEN_ALL_NETWORKS: "false"
   TZ: "EST"
-  NUM_HEADLESS_PROFILES: ""
+  NUM_HEADLESS_PROFILES: "1"
+  fikaHeadless:
+    PROFILE_ID: "682f95fd9747aa006603c832"
+    SERVER_URL: ""
+    SERVER_PORT: ""
+    HTTPS: "true"
+    DISABLE_NODYNAMICAI: "false"
+    USE_MODSYNC: "false"
+    ENABLE_LOG_PURGE: "true"
+    AUTO_RESTART_ON_RAID_END: "true"
+    ESYNC: "false"
+    FSYNC: "false"
+    NTSYNC: "true"
+    USE_DGPU: "false"
+    USE_GRAPHICS: "false"
+    DISABLE_BATCHMODE: "false"
+    XVFG_DEBUG: "false"
+    SAVE_LOG_ON_EXIT: "false"
 
 extraEnv: []
   # - name: FOO
@@ -93,7 +121,7 @@ persistence:
     # Optionally specify a storage class to be used for the transcode directory.
     # If not specified and claimName is not specified, the default storage
     # class will be used.
-    storageClass: "freenas-iscsi-csi"
+    storageClass: "freenas-nfs-csi"
     # subPath: ""
     # The requested size of the volume to be used when creating a
     # PersistentVolumeClaim.
@@ -113,5 +141,35 @@ persistence:
     # The requested size of the volume to be used when creating a
     # PersistentVolumeClaim.
     size: 10Gi
+    # Access mode for this volume
+    accessMode: ReadWriteMany
+  tarkov:
+    # Optionally specify claimName to manually override the PVC to be used for
+    # the config directory. If claimName is specified, storageClass and size
+    # are ignored.
+    # claimName: ""
+    # Optionally specify a storage class to be used for the transcode directory.
+    # If not specified and claimName is not specified, the default storage
+    # class will be used.
+    storageClass: "freenas-nfs-csi"
+    #subPath: "tarkov"
+    # The requested size of the volume to be used when creating a
+    # PersistentVolumeClaim.
+    size: 50Gi
+    # Access mode for this volume
+    accessMode: ReadWriteMany
+  sync:
+    # Optionally specify claimName to manually override the PVC to be used for
+    # the config directory. If claimName is specified, storageClass and size
+    # are ignored.
+    # claimName: ""
+    # Optionally specify a storage class to be used for the transcode directory.
+    # If not specified and claimName is not specified, the default storage
+    # class will be used.
+    storageClass: "freenas-nfs-csi"
+    #subPath: "tarkov"
+    # The requested size of the volume to be used when creating a
+    # PersistentVolumeClaim.
+    size: 50Gi
     # Access mode for this volume
     accessMode: ReadWriteMany

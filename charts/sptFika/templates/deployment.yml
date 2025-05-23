@@ -27,6 +27,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+
       containers:
         - name: spt-fika
           image: "{{ .Values.sptFika.repository }}:{{ .Values.sptFika.tag | default .Chart.AppVersion }}"
@@ -73,11 +74,57 @@ spec:
             {{- if .Values.persistence.server.subPath }}
             subPath: {{ .Values.persistence.server.subPath }}
             {{- end }}
-          - name: users
-            mountPath: /opt/server/user
-            {{- if .Values.persistence.users.subPath }}
-            subPath: {{ .Values.persistence.users.subPath }}
+
+        - name: fika-headless
+          image: "{{ .Values.fikaHeadless.repository }}:{{ .Values.fikaHeadless.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.fikaHeadless.pullPolicy }}
+          ports:
+            - name: headless 
+              containerPort: {{ .Values.service.headlessService.port }}
+              protocol: {{ .Values.service.headlessService.protocol }}
+          env:
+            - name: PROFILE_ID
+              value: "{{ .Values.enviornment.fikaHeadless.PROFILE_ID }}"
+            - name: SERVER_URL
+              value: "{{ .Values.enviornment.fikaHeadless.SERVER_URL }}"
+            - name: SERVER_PORT
+              value: "{{ .Values.enviornment.fikaHeadless.SERVER_PORT }}" 
+            - name: HTTPS
+              value: "{{ .Values.enviornment.fikaHeadless.HTTPS }}" 
+            - name: DISABLE_NODYNAMICAI
+              value: "{{ .Values.enviornment.fikaHeadless.DISABLE_NODYNAMICAI }}" 
+            - name: USE_MODSYNC
+              value: "{{ .Values.enviornment.fikaHeadless.USE_MODSYNC }}" 
+            - name: ENABLE_LOG_PURGE
+              value: "{{ .Values.enviornment.fikaHeadless.ENABLE_LOG_PURGE }}" 
+            - name: AUTO_RESTART_ON_RAID_END
+              value: "{{ .Values.enviornment.fikaHeadless.AUTO_RESTART_ON_RAID_END }}"
+            - name: ESYNC
+              value: "{{ .Values.enviornment.fikaHeadless.ESYNC }}" 
+            - name: FSYNC
+              value: "{{ .Values.enviornment.fikaHeadless.FSYNC }}"
+            - name: NTSYNC
+              value: "{{ .Values.enviornment.fikaHeadless.NTSYNC }}" 
+            - name: USE_DGPU
+              value: "{{ .Values.enviornment.fikaHeadless.USE_DGPU }}" 
+            - name: USE_GRAPHICS
+              value: "{{ .Values.enviornment.fikaHeadless.USE_GRAPHICS }}" 
+            - name: DISABLE_BATCHMODE
+              value: "{{ .Values.enviornment.fikaHeadless.DISABLE_BATCHMODE }}" 
+            - name: XVFG_DEBUG
+              value: "{{ .Values.enviornment.fikaHeadless.XVFG_DEBUG }}" 
+            - name: SAVE_LOG_ON_EXIT
+              value: "{{ .Values.enviornment.fikaHeadless.SAVE_LOG_ON_EXIT }}" 
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
             {{- end }}
+          volumeMounts:
+          - name: server
+            mountPath: /opt/tarkov
+            {{- if .Values.persistence.tarkov.subPath }}
+            subPath: {{ .Values.persistence.tarkov.subPath }}
+            {{- end }}
+
       volumes:
         - name: server
           persistentVolumeClaim:
@@ -85,11 +132,4 @@ spec:
             claimName: "{{ .Values.persistence.server.claimName }}"
             {{- else }}
             claimName: "{{ template "sptFika.fullname" . }}-server"
-            {{- end }}
-        - name: users
-          persistentVolumeClaim:
-            {{- if .Values.persistence.users.claimName }}
-            claimName: "{{ .Values.persistence.users.claimName }}"
-            {{- else }}
-            claimName: "{{ template "sptFika.fullname" . }}-users"
             {{- end }}

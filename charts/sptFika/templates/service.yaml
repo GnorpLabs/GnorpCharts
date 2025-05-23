@@ -11,6 +11,10 @@ spec:
       port: {{ .Values.service.serverService.port }}
       targetPort: server
       protocol: {{ .Values.service.serverService.protocol}}
-      
+    - name: headless
+      port: {{ .Values.service.headlessService.port }}
+      targetPort: headless
+      protocol: {{ .Values.service.headlessService.protocol}}
   selector:
     {{- include "sptFika.selectorLabels" . | nindent 4 }}
+
