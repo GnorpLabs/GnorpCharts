@@ -74,48 +74,48 @@ spec:
               subPath: {{ $element.subPath | default "" }}
               name: {{ $element.name }}
             {{- end }}
-        initContainers:
-          - name: init-{{ include "astroneer.name" . }}-settings
-            image: busybox
-            command:
-              - /bin/sh
-              - -c
-              - 'vars=${!astroneer_*}'
-              - 'for i in $vars; do name=$(echo $i | sed -e "s/astroneer_//") ; printf "%s=%s\n" "$name" "${!i}"; done > AstroServerSettings.ini'
-              - 'echo "ConsolePassword=$CONSOLE_PASSWORD" >> AstroServerSettings.ini'
-              - 'echo "ServerPassword=$SERVER_PASSWORD" >> AstroServerSettings.ini'
-            env:
-              {{- if .Values.secret.enable }}
-              - name: SERVER_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                  {{- if not .Values.secret.name }}
-                    name: {{ include "astroneer.name" . }}-password
-                    key: "serverPassword"
-                  {{- else }}
-                    name: "{{ .Values.secret.name }}"
-                    key: "{{ .Values.secret.key }}"
-                  {{- end }}
-              {{- end }}
-              {{- if .Values.rcon.secret.enable }}
-              - name: CONSOLE_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                  {{- if not .Values.rcon.secret.name }}
-                    name: {{ include "astroneer.name" . }}-rcon-password
-                    key: "rconPassword"
-                  {{- else }}
-                    name: "{{ .Values.rcon.secret.name }}"
-                    key: "{{ .Values.rcon.secret.key }}"
-                  {{- end }}
-              {{- end }}
-              {{- range $k, $v := .Values.astroserversettings.config }}
-              - name: {{ quote $k }}
-                value: {{ quote $v }}
-              {{- end }}
-            volumeMounts:
-              - name: {{ include "astroneer.name" . }}-settings
-                mountPath: {{ .Values.astroserversettings.path }}
+      initContainers:
+        - name: init-{{ include "astroneer.name" . }}-settings
+          image: busybox
+          command:
+            - /bin/sh
+            - -c
+            - 'vars=${!astroneer_*}'
+            - 'for i in $vars; do name=$(echo $i | sed -e "s/astroneer_//") ; printf "%s=%s\n" "$name" "${!i}"; done > AstroServerSettings.ini'
+            - 'echo "ConsolePassword=$CONSOLE_PASSWORD" >> AstroServerSettings.ini'
+            - 'echo "ServerPassword=$SERVER_PASSWORD" >> AstroServerSettings.ini'
+          env:
+            {{- if .Values.secret.enable }}
+            - name: SERVER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                {{- if not .Values.secret.name }}
+                  name: {{ include "astroneer.name" . }}-password
+                  key: "serverPassword"
+                {{- else }}
+                  name: "{{ .Values.secret.name }}"
+                  key: "{{ .Values.secret.key }}"
+                {{- end }}
+            {{- end }}
+            {{- if .Values.rcon.secret.enable }}
+            - name: CONSOLE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                {{- if not .Values.rcon.secret.name }}
+                  name: {{ include "astroneer.name" . }}-rcon-password
+                  key: "rconPassword"
+                {{- else }}
+                  name: "{{ .Values.rcon.secret.name }}"
+                  key: "{{ .Values.rcon.secret.key }}"
+                {{- end }}
+            {{- end }}
+            {{- range $k, $v := .Values.astroserversettings.config }}
+            - name: {{ quote $k }}
+              value: {{ quote $v }}
+            {{- end }}
+          volumeMounts:
+            - name: {{ include "astroneer.name" . }}-settings
+              mountPath: {{ .Values.astroserversettings.path }}
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       {{- with .Values.image.imagePullSecrets }}
       imagePullSecrets:
@@ -250,6 +250,6 @@ spec:
         - name: {{ $element.name }}
           vsphereVolume:
             {{- toYaml $element.vsphereVolume | nindent 12 }}
-        {{ end }}
+        {{- end }}
         {{- end }}
       {{- end }}
