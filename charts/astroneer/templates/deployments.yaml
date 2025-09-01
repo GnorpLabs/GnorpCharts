@@ -85,11 +85,11 @@ spec:
               - 'echo "ConsolePassword=$CONSOLE_PASSWORD" >> AstroServerSettings.ini'
               - 'echo "ServerPassword=$SERVER_PASSWORD" >> AstroServerSettings.ini'
             env:
-              {{- if .Values.secret }}
+              {{- if .Values.secret.enable }}
               - name: SERVER_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                  {{- if not .Values.secret }}
+                  {{- if not .Values.secret.enable }}
                     name: {{ include "astroneer.name" . }}-password
                     key: "serverPassword"
                   {{- else }}

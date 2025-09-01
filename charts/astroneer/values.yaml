@@ -116,17 +116,19 @@ launcher:
     FORCE_CHOWN: false # chowns the astrotux folder on startup; potential workaround for an issue. default: false
 
 rcon:
-  enable: false
-
+  # disable for public rcon access
+  enable: true
   # If not provided a random password will be generated and stored as a secret
-  secret: {}
+  secret:
   # The name of the kubernetes secret object
   # name: ""
   # The key inside the secret that contains the password value
   # key: ""
 
 # If not provided a random password will be generated and stored as a secret
-secret: {}
+secret:
+  # disable for public server access
+  enable: true
   # The name of the kubernetes secret object
   # name: ""
   # The key inside the secret that contains the password value
