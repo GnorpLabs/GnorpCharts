@@ -14,7 +14,6 @@ spec:
         {{- with .Values.annotations }}
         {{- toYaml . | nindent 4 }}
         {{- end }}
-#        checksum/configs: {{ include (print $.Template.BasePath "/configmaps.yaml") . | sha256sum }}
         checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
       labels:
         {{- include "astroneer.labels" . | nindent 8 }}
@@ -58,10 +57,10 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           env:
-          {{- range $k, $v := .Values.launcher.env }}
-          - name: {{ quote $k }}
-            value: {{ quote $v }}
-          {{- end }}
+            {{- range $k, $v := .Values.launcher.env }}
+            - name: {{ quote $k }}
+              value: {{ quote $v }}
+            {{- end }}
           volumeMounts:
             {{- if .Values.persistence.enabled }}
             - name: save-data
@@ -79,14 +78,14 @@ spec:
           - name: init-{{ include "astroneer.name" . }}-settings
             image: busybox
             command:
-            - /bin/sh
-            - -c
-            - 'vars=${!astroneer_*}'
-            - 'for i in $vars; do name=$(echo $i | sed -e "s/astroneer_//") ; printf "%s=%s\n" "$name" "${!i}"; done > AstroServerSettings.ini'
-            - 'echo "ConsolePassword=$CONSOLE_PASSWORD" >> AstroServerSettings.ini'
-            - 'echo "ServerPassword=$SERVER_PASSWORD" >> AstroServerSettings.ini'
+              - /bin/sh
+              - -c
+              - 'vars=${!astroneer_*}'
+              - 'for i in $vars; do name=$(echo $i | sed -e "s/astroneer_//") ; printf "%s=%s\n" "$name" "${!i}"; done > AstroServerSettings.ini'
+              - 'echo "ConsolePassword=$CONSOLE_PASSWORD" >> AstroServerSettings.ini'
+              - 'echo "ServerPassword=$SERVER_PASSWORD" >> AstroServerSettings.ini'
             env:
-              {{- if .Values.secret.enable }}
+              {{- if .Values.secret }}
               - name: SERVER_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -98,7 +97,7 @@ spec:
                     key: "{{ .Values.secret.key }}"
                   {{- end }}
               {{- end }}
-              {{- if .Values.rcon.secret.enable }}
+              {{- if .Values.rcon.secret }}
               - name: CONSOLE_PASSWORD
                 valueFrom:
                   secretKeyRef:
