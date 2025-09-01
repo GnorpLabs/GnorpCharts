@@ -1,6 +1,10 @@
 # Unofficial Astroneer helm chart
 
-## auto-generated server secret
+## Traefik Ingress
+
+To use the traefik ingress it assumes you have the associated entrypoint already created via a traefik deployment.
+
+## Auto-generated server secret
 
 To get the server password secret that has been generated, use the following command in a terminal that is authenticated with the kubernetes cluster. For the console password it is the same command just change 'serverPassword' to 'rconPassword' and 'astroneer-password' to 'astroneer-rcon-password'
 
