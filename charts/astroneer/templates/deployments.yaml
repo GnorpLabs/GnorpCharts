@@ -76,9 +76,9 @@ spec:
             {{- end }}
       initContainers:
         - name: init-{{ include "astroneer.name" . }}-settings
-          image: alpine
+          image: bash
           command:
-            - /bin/bash
+            - bash
             - -c
             - 'vars=${!astroneer_*}'
             - 'for i in $vars; do name=$(echo $i | sed -e "s/astroneer_//") ; printf "%s=%s\n" "$name" "${!i}"; done > AstroServerSettings.ini'
