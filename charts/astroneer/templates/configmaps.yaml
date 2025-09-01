@@ -1,0 +1,7 @@
+apiVersion: v1
+data:
+  AstroServerSettings.ini: |
+    {{- .Values.astroserversettings.config | nindent 4 -}}
+kind: ConfigMap
+metadata:
+  name: {{ include "astroneer.name" . }}-settings

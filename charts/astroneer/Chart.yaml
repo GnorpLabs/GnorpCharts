@@ -3,6 +3,7 @@ appVersion: "1.16.0"
 description: Helm chart to deploy a dedicated server for astroneer using
   Astroneer Dedicated Server using AstroTuxLauncher
 home: https://github.com/GnorpLabs/GnorpCharts/charts/astroneer
+icon: https://astroneer.wiki.gg/wiki/Astroneer_Wiki#/media/File:Icon_Astroneer.png
 keywords:
   - astroneer
   - server

@@ -10,24 +10,24 @@ image:
 
 service:
   enabled: true
-  annotations: {}
-  labels: {}
 
   # For minikube, set this to NodePort, elsewhere use LoadBalancer
   # Use ClusterIP if your setup includes ingress controller
   type: ClusterIP
 
-  # Use if you need to create a TCP health check for load balancers on cloud services.
-  healthz:
-    enabled: false
-    name: healthz
-    port: 80
-    protocol: TCP
-    targetPort: 80
-
   # Port for the service/container to listen on
   port: 7777
   protocol: UDP
+
+# Use if you need to create a TCP health check for load balancers on cloud services.
+healthz:
+  enabled: false
+  name: healthz
+  port: 80
+  protocol: TCP
+  targetPort: 80
+
+
 
 # PVC for save data
 persistence:
@@ -93,8 +93,8 @@ launcher:
     DISABLE_ENCRYPTION: false # Disables connection encryption. default: false
     FORCE_CHOWN: false # chowns the astrotux folder on startup; potential workaround for an issue. default: false
 
-rcon: {}
-  # enable: true
+rcon:
+  enable: false
 
   # If not provided a random password will be generated and stored as a secret
   secret: {}
@@ -115,6 +115,8 @@ traefik:
   enabled: true
   entryPoint: astroneer
   port: 7777
+
+probes: {}
 
 # Additional volumes on the output Deployment definition.
 volumes: []

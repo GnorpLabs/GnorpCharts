@@ -1,14 +1,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  namespace: {{ .Release.Namespace }}
   name: {{ include "astroneer.name" . }}-server
 spec:
   selector:
     matchLabels:
       app.kubernetes.io/component: {{ include "astroneer.name" . }}-server
   strategy:
-    type: "{{ .Values.strategy }}"
+    type: {{ .Values.strategy }}
   template:
     metadata:
       annotations:
@@ -18,7 +17,7 @@ spec:
         checksum/configs: {{ include (print $.Template.BasePath "/configmaps.yaml") . | sha256sum }}
         checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
       labels:
-        {{ include "astroneer.labels" . | indent 8 }}
+        {{- include "astroneer.labels" . | nindent 8 }}
         app.kubernetes.io/name: {{ include "astroneer.name" . }}-server
         app.kubernetes.io/component: {{ include "astroneer.name" . }}-server
         {{- with .Values.labels }}
@@ -26,7 +25,7 @@ spec:
         {{- end }}
     spec:
       containers:
-        {{ if .Values.service.healthz.enabled }}
+        {{- if .Values.healthz.enabled }}
         - name: healthz
           image: "chussenot/tiny-server:latest"
           imagePullPolicy: {{ .Values.image.imagePullPolicy }}
@@ -34,7 +33,7 @@ spec:
             - name: healthz
               containerPort: 80
               protocol: TCP
-        {{ end }}
+        {{- end }}
         - name: astroneer
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.imagePullPolicy }}
@@ -71,6 +70,11 @@ spec:
                   key: "{{ .Values.secret.key }}"
                 {{- end }}
             {{- end }}
+            env:
+            {{- range $k, $v := .Values.launcher.env }}
+            - name: {{ quote $k }}
+              value: {{ quote $v }}
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: {{ include "astroneer.name" . }}-launcher
@@ -99,9 +103,9 @@ spec:
           persistentVolumeClaim:
             {{- if not .Values.persistence.claimName }}
             claimName: {{ include "astroneer.name" . }}-pvc
-            {{ else }}
+            {{- else }}
             claimName: "{{ .Values.persistence.claimName }}"
-            {{ end }}
+            {{- end }}
         - name: {{ include "astroneer.name" . }}-settings
           configMap:
             name: {{ include "astroneer.name" . }}-settings
@@ -225,3 +229,4 @@ spec:
             {{- toYaml $element.vsphereVolume | nindent 12 }}
         {{ end }}
         {{- end }}
+      {{- end }}
