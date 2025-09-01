@@ -89,7 +89,7 @@ spec:
               - name: SERVER_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                  {{- if not .Values.secret.enable }}
+                  {{- if not .Values.secret.name }}
                     name: {{ include "astroneer.name" . }}-password
                     key: "serverPassword"
                   {{- else }}
@@ -97,11 +97,11 @@ spec:
                     key: "{{ .Values.secret.key }}"
                   {{- end }}
               {{- end }}
-              {{- if .Values.rcon.secret }}
+              {{- if .Values.rcon.secret.enable }}
               - name: CONSOLE_PASSWORD
                 valueFrom:
                   secretKeyRef:
-                  {{- if not .Values.rcon.secret }}
+                  {{- if not .Values.rcon.secret.name }}
                     name: {{ include "astroneer.name" . }}-rcon-password
                     key: "rconPassword"
                   {{- else }}
