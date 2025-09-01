@@ -58,32 +58,6 @@ resources:
   #   cpu: 1
   #   memory: 1Gi
 
-# configmap to overwrite the AstroServerSettings.ini file (moved to environment variables for secret generation)
-# astroserversettings:
-#   path: /astrotux/AstroneerServer/Astro/Saved/Config/WindowsServer/AstroServerSettings.ini
-#   config: |
-#     [/Script/Astro.AstroServerSettings]
-#     bLoadAutoSave=true
-#     MaxServerFramerate=30
-#     MaxServerIdleFramerate=3.000000
-#     bWaitForPlayersBeforeShutdown=false
-#     ConsolePassword=
-#     PublicIP=
-#     ServerName=
-#     ServerGuid=
-#     OwnerName=
-#     OwnerGuid=
-#     PlayerActivityTimeout=0
-#     ServerPassword=
-#     bDisableServerTravel=false
-#     DenyUnlistedPlayers=false
-#     VerbosePlayerProperties=false
-#     AutoSaveGameInterval=900
-#     BackupSaveGamesInterval=7200
-#     ActiveSaveFileDescriptiveName=SAVE_1
-#     ShareCode=
-#     ServerAdvertisedName=
-
 astroserversettings:
   path: /astrotux/AstroneerServer/Astro/Saved/Config/WindowsServer
   config: # must have a prefix of 'astroneer_'
