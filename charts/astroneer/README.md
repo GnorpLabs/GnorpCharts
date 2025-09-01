@@ -16,7 +16,7 @@ linux:
 
 ## Config
 
-Used environment variables to create the ini so secrets can be auto generated added to ini via init container.
+Used environment variables to create the AstroServerSettings.ini so secrets can be auto generated added to ini via init container.
 
 configmap version:
 
