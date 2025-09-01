@@ -25,7 +25,7 @@ spec:
       targetPort: {{ .Values.healthz.targetPort }}
     {{- end }}
     - name: {{ include "astroneer.name" . }}
-      port: {{ .Values.port }}
-      targetPort: {{ .Values.port }}
-      protocol: {{ .Values.protocol }}
-  type: {{ .Values.type }}
+      port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.port }}
+      protocol: {{ .Values.service.protocol }}
+  type: {{ .Values.service.type }}
