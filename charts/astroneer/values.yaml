@@ -27,8 +27,6 @@ healthz:
   protocol: TCP
   targetPort: 80
 
-
-
 # PVC for save data
 persistence:
   enabled: true
@@ -60,31 +58,55 @@ resources:
   #   cpu: 1
   #   memory: 1Gi
 
-# configmap to overwrite the AstroServerSettings.ini file
+# configmap to overwrite the AstroServerSettings.ini file (moved to environment variables for secret generation)
+# astroserversettings:
+#   path: /astrotux/AstroneerServer/Astro/Saved/Config/WindowsServer/AstroServerSettings.ini
+#   config: |
+#     [/Script/Astro.AstroServerSettings]
+#     bLoadAutoSave=true
+#     MaxServerFramerate=30
+#     MaxServerIdleFramerate=3.000000
+#     bWaitForPlayersBeforeShutdown=false
+#     ConsolePassword=
+#     PublicIP=
+#     ServerName=
+#     ServerGuid=
+#     OwnerName=
+#     OwnerGuid=
+#     PlayerActivityTimeout=0
+#     ServerPassword=
+#     bDisableServerTravel=false
+#     DenyUnlistedPlayers=false
+#     VerbosePlayerProperties=false
+#     AutoSaveGameInterval=900
+#     BackupSaveGamesInterval=7200
+#     ActiveSaveFileDescriptiveName=SAVE_1
+#     ShareCode=
+#     ServerAdvertisedName=
+
 astroserversettings:
-  path: /astrotux/AstroneerServer/Astro/Saved/Config/WindowsServer/AstroServerSettings.ini
-  config: |
-    [/Script/Astro.AstroServerSettings]
-    bLoadAutoSave=true
-    MaxServerFramerate=30
-    MaxServerIdleFramerate=3.000000
-    bWaitForPlayersBeforeShutdown=false
-    ConsolePassword=
-    PublicIP=
-    ServerName=
-    ServerGuid=
-    OwnerName=
-    OwnerGuid=
-    PlayerActivityTimeout=0
-    ServerPassword=
-    bDisableServerTravel=false
-    DenyUnlistedPlayers=false
-    VerbosePlayerProperties=false
-    AutoSaveGameInterval=900
-    BackupSaveGamesInterval=7200
-    ActiveSaveFileDescriptiveName=SAVE_1
-    ShareCode=
-    ServerAdvertisedName=
+  path: /astrotux/AstroneerServer/Astro/Saved/Config/WindowsServer
+  config: # must have a prefix of 'astroneer_'
+    astroneer_bLoadAutoSave: true
+    astroneer_MaxServerFramerate: 30
+    astroneer_MaxServerIdleFramerate: 3.000000
+    astroneer_bWaitForPlayersBeforeShutdown: false
+    astroneer_PublicIP: ""
+    astroneer_ServerName: ""
+    astroneer_ServerGuid: ""
+    astroneer_OwnerName: ""
+    astroneer_OwnerGuid: ""
+    astroneer_PlayerActivityTimeout: 0
+    astroneer_bDisableServerTravel: false
+    astroneer_DenyUnlistedPlayers: false
+    astroneer_VerbosePlayerProperties: false
+    astroneer_AutoSaveGameInterval: 900
+    astroneer_BackupSaveGamesInterval: 7200
+    astroneer_ActiveSaveFileDescriptiveName: SAVE_1
+    astroneer_ShareCode: ""
+    astroneer_ServerAdvertisedName: ""
+    # ServerPassword will be added from generated secret or values.secret ref
+    # ConsolePassword will be added from generated secret or values.rcon.secret ref
 
 # env variables for AstroTuxLauncher
 launcher:

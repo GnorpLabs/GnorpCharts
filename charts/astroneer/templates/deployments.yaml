@@ -14,7 +14,7 @@ spec:
         {{- with .Values.annotations }}
         {{- toYaml . | nindent 4 }}
         {{- end }}
-        checksum/configs: {{ include (print $.Template.BasePath "/configmaps.yaml") . | sha256sum }}
+#        checksum/configs: {{ include (print $.Template.BasePath "/configmaps.yaml") . | sha256sum }}
         checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
       labels:
         {{- include "astroneer.labels" . | nindent 8 }}
@@ -58,33 +58,16 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           env:
-            {{- if .Values.secret.enable }}
-            - name: SERVER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                {{- if not .Values.secret.externalPassword }}
-                  name: {{ include "astroneer.name" . }}-secret
-                  key: "serverPassword"
-                {{- else }}
-                  name: "{{ .Values.secret.name }}"
-                  key: "{{ .Values.secret.key }}"
-                {{- end }}
-            {{- end }}
-            env:
-            {{- range $k, $v := .Values.launcher.env }}
-            - name: {{ quote $k }}
-              value: {{ quote $v }}
-            {{- end }}
-          envFrom:
-            - configMapRef:
-                name: {{ include "astroneer.name" . }}-launcher
+          {{- range $k, $v := .Values.launcher.env }}
+          - name: {{ quote $k }}
+            value: {{ quote $v }}
+          {{- end }}
           volumeMounts:
             {{- if .Values.persistence.enabled }}
             - name: save-data
               mountPath: {{ .Values.persistence.mountPath }}
-            - name: settings
+            - name: {{ include "astroneer.name" . }}-settings
               mountPath: {{ .Values.astroserversettings.path }}
-              subPath: AstroServerSettings.ini
             {{- end }}
             {{- range $index, $element := .Values.persistence.extra }}
             - mountPath: {{ $element.mountPath }}
@@ -92,6 +75,48 @@ spec:
               subPath: {{ $element.subPath | default "" }}
               name: {{ $element.name }}
             {{- end }}
+        initContainers:
+          - name: init-{{ include "astroneer.name" . }}-settings
+            image: busybox
+            command:
+            - /bin/sh
+            - -c
+            - 'vars=${!astroneer_*}'
+            - 'for i in $vars; do name=$(echo $i | sed -e "s/astroneer_//") ; printf "%s=%s\n" "$name" "${!i}"; done > AstroServerSettings.ini'
+            - 'echo "ConsolePassword=$CONSOLE_PASSWORD" >> AstroServerSettings.ini'
+            - 'echo "ServerPassword=$SERVER_PASSWORD" >> AstroServerSettings.ini'
+            env:
+              {{- if .Values.secret.enable }}
+              - name: SERVER_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                  {{- if not .Values.secret }}
+                    name: {{ include "astroneer.name" . }}-password
+                    key: "serverPassword"
+                  {{- else }}
+                    name: "{{ .Values.secret.name }}"
+                    key: "{{ .Values.secret.key }}"
+                  {{- end }}
+              {{- end }}
+              {{- if .Values.rcon.secret.enable }}
+              - name: CONSOLE_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                  {{- if not .Values.rcon.secret }}
+                    name: {{ include "astroneer.name" . }}-rcon-password
+                    key: "rconPassword"
+                  {{- else }}
+                    name: "{{ .Values.rcon.secret.name }}"
+                    key: "{{ .Values.rcon.secret.key }}"
+                  {{- end }}
+              {{- end }}
+              {{- range $k, $v := .Values.astroserversettings.config }}
+              - name: {{ quote $k }}
+                value: {{ quote $v }}
+              {{- end }}
+            volumeMounts:
+              - name: {{ include "astroneer.name" . }}-settings
+                mountPath: {{ .Values.astroserversettings.path }}
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       {{- with .Values.image.imagePullSecrets }}
       imagePullSecrets:
@@ -107,8 +132,7 @@ spec:
             claimName: "{{ .Values.persistence.claimName }}"
             {{- end }}
         - name: {{ include "astroneer.name" . }}-settings
-          configMap:
-            name: {{ include "astroneer.name" . }}-settings
+          emptyDir: {}
         {{- range $index, $element := .Values.persistence.extra }}
         {{- if $element.persistentVolumeClaim }}
         - name: {{ $element.name }}
