@@ -1,5 +1,15 @@
 # Unofficial Astroneer helm chart
 
+## auto-generated server secret
+
+To get the server password secret that has been generated, use the following command in a terminal that is authenticated with the kubernetes cluster. For the console password it is the same command just change 'serverPassword' to 'rconPassword' and 'astroneer-password' to 'astroneer-rcon-password'
+
+windows:
+`kubectl get secret -n astroneer astroneer-password -o jsonpath='{.data.serverPassword}' | %{[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_))}`
+
+linux:
+`kubectl get secret -n astroneer astroneer-password -o jsonpath='{.data.serverPassword}' | base64 -d`
+
 ## Config
 
 Used environment variables to create the ini so secrets can be auto generated added to ini via init container.
