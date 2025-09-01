@@ -76,7 +76,7 @@ spec:
             {{- end }}
       initContainers:
         - name: init-{{ include "astroneer.name" . }}-settings
-          image: busybox
+          image: alpine
           command:
             - /bin/bash
             - -c
