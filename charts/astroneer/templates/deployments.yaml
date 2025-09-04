@@ -66,8 +66,8 @@ spec:
             - name: save-data
               mountPath: {{ .Values.persistence.mountPath }}
             - name: {{ include "astroneer.name" . }}-settings
-              mountPath: /fuck/me #{{ .Values.astroserversettings.path }}
-              #subPath: AstroServerSettings.ini
+              mountPath: /settings/test #{{ .Values.astroserversettings.path }}
+              #subPath: settings
             {{- end }}
             {{- range $index, $element := .Values.persistence.extra }}
             - mountPath: {{ $element.mountPath }}
@@ -79,14 +79,15 @@ spec:
         - name: init-{{ include "astroneer.name" . }}-settings
           image: bash
           command: [ "bash", "-c", '
-              echo "[/Script/Astro.AstroServerSettings]" > /fuck/me/AstroServerSettings.ini;
+              cd /settings;
+              echo "[/Script/Astro.AstroServerSettings]" > AstroServerSettings.ini;
               vars=${!astroneer_*};
               for i in $vars;
                 do name=$(echo $i | sed -e "s/astroneer_//");
-                printf "%s=%s\n" "$name" "${!i}" >> /fuck/me/AstroServerSettings.ini;
+                printf "%s=%s\n" "$name" "${!i}" >> AstroServerSettings.ini;
               done;
-              echo "ConsolePassword=$CONSOLE_PASSWORD" >> /fuck/me/AstroServerSettings.ini;
-              echo "ServerPassword=$SERVER_PASSWORD" >> /fuck/me/AstroServerSettings.ini;'
+              echo "ConsolePassword=$CONSOLE_PASSWORD" >> AstroServerSettings.ini;
+              echo "ServerPassword=$SERVER_PASSWORD" >> AstroServerSettings.ini;'
           ]
           env:
             {{- if .Values.secret.enable }}
@@ -119,7 +120,7 @@ spec:
             {{- end }}
           volumeMounts:
             - name: {{ include "astroneer.name" . }}-settings
-              mountPath: /fuck/me #{{ .Values.astroserversettings.path }}
+              mountPath: /settings
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       {{- with .Values.image.imagePullSecrets }}
       imagePullSecrets:
