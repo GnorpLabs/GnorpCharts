@@ -66,9 +66,9 @@ astroserversettings:
     astroneer_MaxServerIdleFramerate: 3.000000
     astroneer_bWaitForPlayersBeforeShutdown: false
     astroneer_PublicIP: ""
-    astroneer_ServerName: ""
+    astroneer_ServerName: "Amigo Dedicated Server"
     astroneer_ServerGuid: ""
-    astroneer_OwnerName: ""
+    astroneer_OwnerName: "v4de"
     astroneer_OwnerGuid: ""
     astroneer_PlayerActivityTimeout: 0
     astroneer_bDisableServerTravel: false

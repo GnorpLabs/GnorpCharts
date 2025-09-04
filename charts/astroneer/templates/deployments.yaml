@@ -66,8 +66,8 @@ spec:
             - name: save-data
               mountPath: {{ .Values.persistence.mountPath }}
             - name: {{ include "astroneer.name" . }}-settings
-              mountPath: {{ .Values.astroserversettings.path }}
-              subPath: AstroServerSettings.ini
+              mountPath: /fuck/me #{{ .Values.astroserversettings.path }}
+              #subPath: AstroServerSettings.ini
             {{- end }}
             {{- range $index, $element := .Values.persistence.extra }}
             - mountPath: {{ $element.mountPath }}
@@ -81,11 +81,11 @@ spec:
           command:
             - bash
             - -c
-            - 'cd "{{ .Values.astroserversettings.path }}"'
             - 'vars=${!astroneer_*}'
-            - 'for i in $vars; do name=$(echo $i | sed -e "s/astroneer_//") ; printf "%s=%s\n" "$name" "${!i}"; done > AstroServerSettings.ini'
-            - 'echo "ConsolePassword=$CONSOLE_PASSWORD" >> AstroServerSettings.ini'
-            - 'echo "ServerPassword=$SERVER_PASSWORD" >> AstroServerSettings.ini'
+            - 'echo "[/Script/Astro.AstroServerSettings]" > /fuck/me/AstroServerSettings.ini'
+            - 'for i in $vars; do name=$(echo $i | sed -e "s/astroneer_//") ; printf "%s=%s\n" "$name" "${!i}"; done >> /fuck/me/AstroServerSettings.ini'
+            - 'echo "ConsolePassword=$CONSOLE_PASSWORD" >> /fuck/me/AstroServerSettings.ini'
+            - 'echo "ServerPassword=$SERVER_PASSWORD" >> /fuck/me/AstroServerSettings.ini'
           env:
             {{- if .Values.secret.enable }}
             - name: SERVER_PASSWORD
@@ -117,7 +117,7 @@ spec:
             {{- end }}
           volumeMounts:
             - name: {{ include "astroneer.name" . }}-settings
-              mountPath: {{ .Values.astroserversettings.path }}
+              mountPath: /fuck/me #{{ .Values.astroserversettings.path }}
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       {{- with .Values.image.imagePullSecrets }}
       imagePullSecrets:
