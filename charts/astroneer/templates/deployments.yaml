@@ -67,6 +67,7 @@ spec:
               mountPath: {{ .Values.persistence.mountPath }}
             - name: {{ include "astroneer.name" . }}-settings
               mountPath: {{ .Values.astroserversettings.path }}
+              subPath: AstroServerSettings.ini
             {{- end }}
             {{- range $index, $element := .Values.persistence.extra }}
             - mountPath: {{ $element.mountPath }}
