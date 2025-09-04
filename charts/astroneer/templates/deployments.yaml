@@ -78,14 +78,16 @@ spec:
       initContainers:
         - name: init-{{ include "astroneer.name" . }}-settings
           image: bash
-          command:
-            - bash
-            - -c
-            - 'vars=${!astroneer_*}'
-            - 'echo "[/Script/Astro.AstroServerSettings]" > /fuck/me/AstroServerSettings.ini'
-            - 'for i in $vars; do name=$(echo $i | sed -e "s/astroneer_//") ; printf "%s=%s\n" "$name" "${!i}"; done >> /fuck/me/AstroServerSettings.ini'
-            - 'echo "ConsolePassword=$CONSOLE_PASSWORD" >> /fuck/me/AstroServerSettings.ini'
-            - 'echo "ServerPassword=$SERVER_PASSWORD" >> /fuck/me/AstroServerSettings.ini'
+          command: [ "bash", "-c", '
+              echo "[/Script/Astro.AstroServerSettings]" > /fuck/me/AstroServerSettings.ini;
+              vars=${!astroneer_*};
+              for i in $vars;
+                do name=$(echo $i | sed -e "s/astroneer_//");
+                printf "%s=%s\n" "$name" "${!i}" >> /fuck/me/AstroServerSettings.ini;
+              done;
+              echo "ConsolePassword=$CONSOLE_PASSWORD" >> /fuck/me/AstroServerSettings.ini;
+              echo "ServerPassword=$SERVER_PASSWORD" >> /fuck/me/AstroServerSettings.ini;'
+          ]
           env:
             {{- if .Values.secret.enable }}
             - name: SERVER_PASSWORD
