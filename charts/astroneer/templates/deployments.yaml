@@ -66,8 +66,8 @@ spec:
             - name: save-data
               mountPath: {{ .Values.persistence.mountPath }}
             - name: {{ include "astroneer.name" . }}-settings
-              mountPath: /settings/test #{{ .Values.astroserversettings.path }}
-              #subPath: settings
+              mountPath: {{ .Values.astroserversettings.path }}
+              subPath: AstroServerSettings.ini # astroneer server config that it searches for
             {{- end }}
             {{- range $index, $element := .Values.persistence.extra }}
             - mountPath: {{ $element.mountPath }}
@@ -88,7 +88,7 @@ spec:
               done;
               echo "ConsolePassword=$CONSOLE_PASSWORD" >> AstroServerSettings.ini;
               echo "ServerPassword=$SERVER_PASSWORD" >> AstroServerSettings.ini;'
-          ]
+          ] # creates the AstroServerSettings.ini from values.yaml
           env:
             {{- if .Values.secret.enable }}
             - name: SERVER_PASSWORD
@@ -119,7 +119,7 @@ spec:
               value: {{ quote $v }}
             {{- end }}
           volumeMounts:
-            - name: {{ include "astroneer.name" . }}-settings
+            - name: {{ include "astroneer.name" . }}-settings # ephemeral volume that stores AstroServerSettings.ini
               mountPath: /settings
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       {{- with .Values.image.imagePullSecrets }}

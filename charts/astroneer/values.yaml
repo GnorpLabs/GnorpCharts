@@ -22,10 +22,10 @@ service:
 # Use if you need to create a TCP health check for load balancers on cloud services.
 healthz:
   enabled: false
-  name: healthz
-  port: 80
-  protocol: TCP
-  targetPort: 80
+  # name: healthz
+  # port: 80
+  # protocol: TCP
+  # targetPort: 80
 
 # PVC for save data
 persistence:
@@ -35,8 +35,9 @@ persistence:
   # are ignored.
   # claimName: ""
   mountPath: /astrotux/AstroneerServer/Astro/Saved
-  size: 5Gi
   storageClass: "" # leave empty to use cluster default
+  # accessMode: ReadWriteOnce # this is hard coded to ReadWriteOnce
+  size: 5Gi
 
   # Additional storage definitions
   #
@@ -58,17 +59,18 @@ resources:
   #   cpu: 1
   #   memory: 1Gi
 
+# custom object to pass config from values.yaml to astroneer config file
 astroserversettings:
-  path: /astrotux/AstroneerServer/Astro/Saved/Config/WindowsServer
-  config: # must have a prefix of 'astroneer_'
+  path: /astrotux/AstroneerServer/Astro/Saved/Config/WindowsServer/AstroServerSettings.ini
+  config: # must have a prefix of 'astroneer_' to be picked up by init container
     astroneer_bLoadAutoSave: true
     astroneer_MaxServerFramerate: 30
     astroneer_MaxServerIdleFramerate: 3.000000
     astroneer_bWaitForPlayersBeforeShutdown: false
     astroneer_PublicIP: ""
-    astroneer_ServerName: "Amigo Dedicated Server"
+    astroneer_ServerName: ""
     astroneer_ServerGuid: ""
-    astroneer_OwnerName: "v4de"
+    astroneer_OwnerName: ""
     astroneer_OwnerGuid: ""
     astroneer_PlayerActivityTimeout: 0
     astroneer_bDisableServerTravel: false
@@ -88,6 +90,8 @@ launcher:
     DEBUG: false # Enables debug logging. default: false
     DISABLE_ENCRYPTION: false # Disables connection encryption. default: false
     FORCE_CHOWN: false # chowns the astrotux folder on startup; potential workaround for an issue. default: false
+
+# TODO: Launcher has its own config, can set it up from values.yaml as well
 
 rcon:
   enable: true
@@ -109,11 +113,11 @@ secret:
   # The key inside the secret that contains the password value
   # key: ""
 
-# Traefik ingress config
+# Traefik ingress config, entrypoint should exist prior to setting. Astroneer does not support DNS names at this time.
 traefik:
-  enabled: true
-  entryPoint: astroneer
-  port: 7777
+  enabled: false
+  # entryPoint: astroneer
+  # port: 7777
 
 probes: {}
 
