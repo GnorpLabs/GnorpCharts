@@ -1,0 +1,61 @@
+{{- if not .Values.persistence.claimName}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "astroneer.name" . }}-pvc
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- with .Values.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  labels:
+    {{- include "astroneer.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "astroneer.name" . }}-pvc
+    app.kubernetes.io/component: {{ include "astroneer.name" . }}-pvc
+    {{- if .Values.persistence.preventDelete }}
+    helm.sh/resource-policy: keep
+    {{ end }}
+    {{- with .Values.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.persistence.size | quote }}
+  {{- if .Values.persistence.storageClass }}
+  storageClassName: {{ .Values.persistence.storageClass | quote }}
+  {{- end }}
+{{- end }}
+---
+{{- range $index, $element := .Values.persistence.extra }}
+{{- if and $element.persistentVolumeClaim (not $element.external) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: "{{ $.Release.Name }}-{{ $element.name }}-pvc"
+  annotations:
+    {{- with $.Values.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  labels:
+    {{ include "astroneer.labels" . | nindent 4 }}
+    app.kubernetes.io/name: "{{ $.Release.Name }}-{{ $element.name }}-pvc"
+    app.kubernetes.io/component: "{{ $.Release.Name }}-{{ $element.name }}-pvc"
+    {{- if $element.preventDelete }}
+    helm.sh/resource-policy: keep
+    {{ end }}
+    {{- with $.Values.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ $element.size }}
+  storageClassName: {{ $element.storageClassName }}
+{{ end }}
+{{ end }}

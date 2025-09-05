@@ -1,0 +1,31 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "astroneer.name" . }}-svc
+  labels:
+    {{- include "astroneer.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "astroneer.name" . }}-svc
+    app.kubernetes.io/component: {{ include "astroneer.name" . }}-svc
+    {{- with .Values.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  annotations:
+    {{- with .Values.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    app.kubernetes.io/component: {{ include "astroneer.name" . }}-server
+  ports:
+    {{- if .Values.healthz.enabled }}
+    - name: {{ .Values.healthz.name }}
+      port: {{ .Values.healthz.port }}
+      protocol: {{ .Values.healthz.protocol }}
+      targetPort: {{ .Values.healthz.targetPort }}
+    {{- end }}
+    - name: {{ include "astroneer.name" . }}
+      port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.port }}
+      protocol: {{ .Values.service.protocol }}
+  type: {{ .Values.service.type }}
