@@ -79,7 +79,7 @@ astroserversettings:
     astroneer_bWaitForPlayersBeforeShutdown: false
     astroneer_PublicIP: ""
     astroneer_ServerName: "test"
-    astroneer_ServerGuid: ""
+    astroneer_ServerGuid: "" # TODO: Autogenerate hexadecimal serverguid
     astroneer_OwnerName: ""
     astroneer_OwnerGuid: ""
     astroneer_PlayerActivityTimeout: 0
