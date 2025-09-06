@@ -23,10 +23,14 @@ spec:
         {{- toYaml . | nindent 4 }}
         {{- end }}
     spec:
+      securityContext:
+        {{- with .Values.podSecurityContext }}
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
       containers:
         {{- if .Values.healthz.enabled }}
         - name: healthz
-          image: "chussenot/tiny-server:latest"
+          image: chussenot/tiny-server:latest
           imagePullPolicy: {{ .Values.image.imagePullPolicy }}
           ports:
             - name: healthz
@@ -61,6 +65,10 @@ spec:
             - name: {{ quote $k }}
               value: {{ quote $v }}
             {{- end }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             {{- if .Values.persistence.enabled }}
             - name: save-data
@@ -79,7 +87,7 @@ spec:
         - name: init-{{ include "astroneer.name" . }}-settings
           image: bash
           command:
-            - /bin/sh
+            - bash
             - -c
             - /scripts/init-settings.sh # creates the AstroServerSettings.ini from values.yaml
           env:
@@ -115,7 +123,7 @@ spec:
             - name: {{ include "astroneer.name" . }}-settings # ephemeral volume that stores AstroServerSettings.ini
               mountPath: /settings
             - name: scripts
-              mountPath:  /scripts
+              mountPath: /scripts
               readOnly: true
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       {{- with .Values.image.imagePullSecrets }}
@@ -134,10 +142,10 @@ spec:
         - name: {{ include "astroneer.name" . }}-settings
           emptyDir: {}
         - name: scripts
-            configMap:
-              name: {{ include "astroneer.name" . }}-scripts
-              defaultMode: 0777
-              items:
+          configMap:
+            name: {{ include "astroneer.name" . }}-scripts
+            defaultMode: 0777
+            items:
               - key: init-settings.sh
                 path: init-settings.sh
         {{- range $index, $element := .Values.persistence.extra }}

@@ -8,6 +8,16 @@ image:
 
 # restartPolicy: unless-stopped
 
+podSecurityContext:
+  # fsGroup: 2000
+  # runAsNonRoot: true
+  # runAsUser: 1000
+  # runAsGroup: 1000
+  # seccompProfile:
+  #   type: RuntimeDefault
+
+securityContext: {}
+
 service:
   enabled: true
 
@@ -68,7 +78,7 @@ astroserversettings:
     astroneer_MaxServerIdleFramerate: 3.000000
     astroneer_bWaitForPlayersBeforeShutdown: false
     astroneer_PublicIP: ""
-    astroneer_ServerName: ""
+    astroneer_ServerName: "test"
     astroneer_ServerGuid: ""
     astroneer_OwnerName: ""
     astroneer_OwnerGuid: ""
@@ -91,7 +101,7 @@ launcher:
     DISABLE_ENCRYPTION: false # Disables connection encryption. default: false
     FORCE_CHOWN: false # chowns the astrotux folder on startup; potential workaround for an issue. default: false
 
-# TODO: Launcher has its own config, can set it up from values.yaml as well
+# TODO: Launcher has its own config for discord notifications and etc
 
 rcon:
   enable: true
