@@ -93,7 +93,8 @@ astroserversettings:
     astroneer_ServerAdvertisedName: ""
     # astroneer_MaximumPlayerCount: 8 # default
     # astroneer_ConsolePort: 1234 # default
-    # astroneer_HeartbeatInterval: 55, # this is automatically enforced by astroTux
+    # astroneer_VerbosePlayerProperties: false # this is automatically enforced by astroTux
+    # astroneer_HeartbeatInterval: 55 # this is automatically enforced by astroTux
     # astroneer_ServerPassword will be added from generated secret or values.secret ref
     # astroneer_ConsolePassword will be added from generated secret or values.rcon.secret ref
 
