@@ -23,10 +23,14 @@ spec:
         {{- toYaml . | nindent 4 }}
         {{- end }}
     spec:
+      securityContext:
+        {{- with .Values.podSecurityContext }}
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
       containers:
         {{- if .Values.healthz.enabled }}
         - name: healthz
-          image: "chussenot/tiny-server:latest"
+          image: chussenot/tiny-server:latest
           imagePullPolicy: {{ .Values.image.imagePullPolicy }}
           ports:
             - name: healthz
@@ -61,6 +65,10 @@ spec:
             - name: {{ quote $k }}
               value: {{ quote $v }}
             {{- end }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             {{- if .Values.persistence.enabled }}
             - name: save-data
@@ -78,17 +86,10 @@ spec:
       initContainers:
         - name: init-{{ include "astroneer.name" . }}-settings
           image: bash
-          command: [ "bash", "-c", '
-              cd /settings;
-              echo "[/Script/Astro.AstroServerSettings]" > AstroServerSettings.ini;
-              vars=${!astroneer_*};
-              for i in $vars;
-                do name=$(echo $i | sed -e "s/astroneer_//");
-                printf "%s=%s\n" "$name" "${!i}" >> AstroServerSettings.ini;
-              done;
-              echo "ConsolePassword=$CONSOLE_PASSWORD" >> AstroServerSettings.ini;
-              echo "ServerPassword=$SERVER_PASSWORD" >> AstroServerSettings.ini;'
-          ] # creates the AstroServerSettings.ini from values.yaml
+          command:
+            - bash
+            - -c
+            - /scripts/init-settings.sh # creates the AstroServerSettings.ini from values.yaml
           env:
             {{- if .Values.secret.enable }}
             - name: SERVER_PASSWORD
@@ -121,6 +122,9 @@ spec:
           volumeMounts:
             - name: {{ include "astroneer.name" . }}-settings # ephemeral volume that stores AstroServerSettings.ini
               mountPath: /settings
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       {{- with .Values.image.imagePullSecrets }}
       imagePullSecrets:
@@ -137,6 +141,13 @@ spec:
             {{- end }}
         - name: {{ include "astroneer.name" . }}-settings
           emptyDir: {}
+        - name: scripts
+          configMap:
+            name: {{ include "astroneer.name" . }}-scripts
+            defaultMode: 0777
+            items:
+              - key: init-settings.sh
+                path: init-settings.sh
         {{- range $index, $element := .Values.persistence.extra }}
         {{- if $element.persistentVolumeClaim }}
         - name: {{ $element.name }}
