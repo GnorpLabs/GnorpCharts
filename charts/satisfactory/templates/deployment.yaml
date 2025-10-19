@@ -19,7 +19,7 @@ spec:
       {{- end }}
       labels:
         {{- include "satisfactory.labels" . | nindent 8 }}
-	{{- with .Values.podLabels }}
+        {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
@@ -27,12 +27,16 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with .Values.podSecurityContext }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
+          {{- with .Values.securityContext }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
@@ -42,26 +46,32 @@ spec:
               protocol: {{ $value.protocol }}
             {{- end }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-          {{- with .Values.env }}
-          env: {{- toYaml . | nindent 10 }}
-          {{- end }}
+            {{- toYaml . | nindent 12 }}
+          env:
+            {{- range $k, $v := .Values.env }}
+            - name: {{ quote $k }}
+              value: {{ quote $v }}
+            {{- end }}
           volumeMounts:
-            - name: {{ include "satisfactory.fullname" . }}-config
+            - name: config
               mountPath: /config
-            - name: {{ include "satisfactory.fullname" . }}-server-cache
-              mountPath: /config/gamefiles
+            {{- if .Values.persistence.config.subPath }}
+              subPath: {{ .Values.persistence.config.subPath }}
+            {{- end }}
+          {{- with .Values.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
       volumes:
-        {{- range $value := .Values.persistence }}
-        - name: {{ include "satisfactory.fullname" $ }}-{{ $value.name }}
-          {{- if $value.enabled }}
+        - name: config
           persistentVolumeClaim:
-            claimName: {{ include "satisfactory.fullname" $ }}-{{ $value.name }}
-          {{- else }}
-          emptyDir:
-            sizeLimit: {{ $value.size}}
-          {{ end }}
-        {{- end }}
+            {{- if .Values.persistence.config.claimName }}
+            claimName: "{{ .Values.persistence.config.claimName }}"
+            {{- else }}
+            claimName: "{{ template "satisfactory.fullname" . }}-config"
+            {{- end }}
+        {{- with .Values.volumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
