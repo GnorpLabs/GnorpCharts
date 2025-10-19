@@ -123,6 +123,17 @@ entries:
     urls:
     - https://github.com/GnorpLabs/GnorpCharts/releases/download/radarr-0.1.0/radarr-0.1.0.tgz
     version: 0.1.0
+  recyclarr:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2025-10-19T00:36:10.725458511Z"
+    description: A Helm chart for Kubernetes
+    digest: bfb42cc27efcdc30eb781b32f608a68058668b86f54a3bd590cb9e5918b80d71
+    name: recyclarr
+    type: application
+    urls:
+    - https://github.com/GnorpLabs/GnorpCharts/releases/download/recyclarr-0.1.0/recyclarr-0.1.0.tgz
+    version: 0.1.0
   satisfactory:
   - apiVersion: v2
     appVersion: v1.6.1
@@ -167,4 +178,4 @@ entries:
     urls:
     - https://github.com/GnorpLabs/GnorpCharts/releases/download/tautulli-0.1.0/tautulli-0.1.0.tgz
     version: 0.1.0
-generated: "2025-10-19T00:15:58.173410432Z"
+generated: "2025-10-19T00:36:10.725496292Z"
