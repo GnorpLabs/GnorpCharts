@@ -77,11 +77,11 @@ astroserversettings:
     astroneer_MaxServerFramerate: 30
     astroneer_MaxServerIdleFramerate: 3.000000
     astroneer_bWaitForPlayersBeforeShutdown: false
-    astroneer_PublicIP: ""
-    astroneer_ServerName: "test"
-    astroneer_ServerGuid: ""
-    astroneer_OwnerName: ""
-    astroneer_OwnerGuid: ""
+    astroneer_PublicIP: "xxx.xxx.xxx.xxx"
+    astroneer_ServerName: "Change Me Goo Goo"
+    astroneer_ServerGuid: "" # TODO: Autogenerate hexadecimal serverguid, this MUST be SET or xAuth token will error
+    astroneer_OwnerName: "" # first person to join steam name
+    astroneer_OwnerGuid: "" # set to 0 before first person joins
     astroneer_PlayerActivityTimeout: 0
     astroneer_bDisableServerTravel: false
     astroneer_DenyUnlistedPlayers: false
@@ -91,8 +91,12 @@ astroserversettings:
     astroneer_ActiveSaveFileDescriptiveName: SAVE_1
     astroneer_ShareCode: ""
     astroneer_ServerAdvertisedName: ""
-    # ServerPassword will be added from generated secret or values.secret ref
-    # ConsolePassword will be added from generated secret or values.rcon.secret ref
+    # astroneer_MaximumPlayerCount: 8 # default
+    # astroneer_ConsolePort: 1234 # default
+    # astroneer_VerbosePlayerProperties: false # this is automatically enforced by astroTux
+    # astroneer_HeartbeatInterval: 55 # this is automatically enforced by astroTux
+    # astroneer_ServerPassword will be added from generated secret or values.secret ref
+    # astroneer_ConsolePassword will be added from generated secret or values.rcon.secret ref
 
 # env variables for AstroTuxLauncher
 launcher:
