@@ -1,0 +1,13 @@
+{{- if .Values.traefik.enabled }}
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteUDP
+metadata:
+  name: {{ include "astroneer.name" . }}-udp
+spec:
+  entryPoints:
+    - {{ .Values.traefik.entryPoint }}
+  routes:
+    - services:
+      - name: {{ include "astroneer.name" . }}-svc
+        port: {{ .Values.traefik.port }}
+{{- end }}

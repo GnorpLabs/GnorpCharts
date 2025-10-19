@@ -1,0 +1,10 @@
+Get the server password by running:
+  windows: kubectl get secret -n {{ .Release.Namespace }} {{ .Values.secret.name | default (include "astroneer.name" .)-password }} -o jsonpath='{.data.{{ .Values.secret.key | default "serverPassword" }}}' | %{[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_))}
+  linux: kubectl get secret -n {{ .Release.Namespace }} {{ .Values.secret.name | default (include "astroneer.name" .)-password }} -o jsonpath='{.data.{{ .Values.secret.key | default "serverPassword" }}}' | base64 -d
+
+{{- if and (not .Values.persistence.enabled) (not .Values.persistence.disableWarning) }}
+#################################################################################
+######   WARNING: Persistence is disabled!!! You will lose your save when   #####
+######            the pod is terminated.                                    #####
+#################################################################################
+{{- end }}

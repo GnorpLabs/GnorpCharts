@@ -1,0 +1,149 @@
+# Default values for astroneer dedicated game server.
+
+image:
+  repository: docker.io/whalybird/astroneer-server
+  tag: latest
+  pullPolicy: IfNotPresent
+  imagePullSecrets: []
+
+# restartPolicy: unless-stopped
+
+podSecurityContext:
+  # fsGroup: 2000
+  # runAsNonRoot: true
+  # runAsUser: 1000
+  # runAsGroup: 1000
+  # seccompProfile:
+  #   type: RuntimeDefault
+
+securityContext: {}
+
+service:
+  enabled: true
+
+  # For minikube, set this to NodePort, elsewhere use LoadBalancer
+  # Use ClusterIP if your setup includes ingress controller
+  type: ClusterIP
+
+  # Port for the service/container to listen on
+  port: 7777
+  protocol: UDP
+
+# Use if you need to create a TCP health check for load balancers on cloud services.
+healthz:
+  enabled: false
+  # name: healthz
+  # port: 80
+  # protocol: TCP
+  # targetPort: 80
+
+# PVC for save data
+persistence:
+  enabled: true
+  # Optionally specify claimName to manually override the PVC to be used for
+  # the config directory. If claimName is specified, storageClass and size
+  # are ignored.
+  # claimName: ""
+  mountPath: /astrotux/AstroneerServer/Astro/Saved
+  storageClass: "" # leave empty to use cluster default
+  # accessMode: ReadWriteOnce # this is hard coded to ReadWriteOnce
+  size: 5Gi
+
+  # Additional storage definitions
+  #
+  # Supports all storage types as defined by https://kubernetes.io/docs/reference/kubernetes-api/config-and-storage-resources/volume/#Volume
+  #
+  # The objects supports configuring the mount path and the subpath.
+  # If external isn't true, the defined deletion prevention, storage class, and size will be used to create a new PVC
+  extra: []
+
+resources:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 1
+  #   memory: 1Gi
+  # requests:
+  #   cpu: 1
+  #   memory: 1Gi
+
+# custom object to pass config from values.yaml to astroneer config file
+astroserversettings:
+  path: /astrotux/AstroneerServer/Astro/Saved/Config/WindowsServer/AstroServerSettings.ini
+  config: # must have a prefix of 'astroneer_' to be picked up by init container
+    astroneer_bLoadAutoSave: true
+    astroneer_MaxServerFramerate: 30
+    astroneer_MaxServerIdleFramerate: 3.000000
+    astroneer_bWaitForPlayersBeforeShutdown: false
+    astroneer_PublicIP: "xxx.xxx.xxx.xxx"
+    astroneer_ServerName: "Change Me Goo Goo"
+    astroneer_ServerGuid: "" # TODO: Autogenerate hexadecimal serverguid, this MUST be SET or xAuth token will error
+    astroneer_OwnerName: "" # first person to join steam name
+    astroneer_OwnerGuid: "" # set to 0 before first person joins
+    astroneer_PlayerActivityTimeout: 0
+    astroneer_bDisableServerTravel: false
+    astroneer_DenyUnlistedPlayers: false
+    astroneer_VerbosePlayerProperties: false
+    astroneer_AutoSaveGameInterval: 900
+    astroneer_BackupSaveGamesInterval: 7200
+    astroneer_ActiveSaveFileDescriptiveName: SAVE_1
+    astroneer_ShareCode: ""
+    astroneer_ServerAdvertisedName: ""
+    # astroneer_MaximumPlayerCount: 8 # default
+    # astroneer_ConsolePort: 1234 # default
+    # astroneer_VerbosePlayerProperties: false # this is automatically enforced by astroTux
+    # astroneer_HeartbeatInterval: 55 # this is automatically enforced by astroTux
+    # astroneer_ServerPassword will be added from generated secret or values.secret ref
+    # astroneer_ConsolePassword will be added from generated secret or values.rcon.secret ref
+
+# env variables for AstroTuxLauncher
+launcher:
+  env:
+    DEBUG: false # Enables debug logging. default: false
+    DISABLE_ENCRYPTION: false # Disables connection encryption. default: false
+    FORCE_CHOWN: false # chowns the astrotux folder on startup; potential workaround for an issue. default: false
+
+# TODO: Launcher has its own config for discord notifications and etc
+
+rcon:
+  enable: true
+  # If not provided a random password will be generated and stored as a secret
+  secret:
+    # disable for public rcon access
+    enable: true
+  # The name of the kubernetes secret object
+  # name: ""
+  # The key inside the secret that contains the password value
+  # key: ""
+
+# If not provided a random password will be generated and stored as a secret
+secret:
+  # disable for public server access
+  enable: true
+  # The name of the kubernetes secret object
+  # name: ""
+  # The key inside the secret that contains the password value
+  # key: ""
+
+# Traefik ingress config, entrypoint should exist prior to setting. Astroneer does not support DNS names at this time.
+traefik:
+  enabled: false
+  # entryPoint: astroneer
+  # port: 7777
+
+probes: {}
+
+# Additional volumes on the output Deployment definition.
+volumes: []
+# - name: foo
+#   secret:
+#     secretName: mysecret
+#     optional: false
+
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts: []
+# - name: foo
+#   mountPath: "/etc/foo"
+#   readOnly: true

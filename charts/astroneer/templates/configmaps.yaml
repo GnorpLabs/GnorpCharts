@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "astroneer.name" . }}-scripts
+  annotations:
+    {{- with .Values.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  labels:
+    {{- include "astroneer.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "astroneer.name" . }}-scripts
+    app.kubernetes.io/component: {{ include "astroneer.name" . }}-scripts
+    {{- with .Values.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+data:
+  init-settings.sh:  |
+    #!/usr/bin/env bash
+    cd /settings
+    echo "[/Script/Astro.AstroServerSettings]" > AstroServerSettings.ini
+    vars=${!astroneer_*}
+    for i in $vars
+      do name=$(echo $i | sed -e "s/astroneer_//")
+      printf "%s=%s\n" "$name" "${!i}" >> AstroServerSettings.ini
+    done
+    echo "ConsolePassword=$CONSOLE_PASSWORD" >> AstroServerSettings.ini
+    echo "ServerPassword=$SERVER_PASSWORD" >> AstroServerSettings.ini
