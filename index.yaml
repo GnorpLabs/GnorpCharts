@@ -115,6 +115,16 @@ entries:
   radarr:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2025-12-11T05:14:10.677866504Z"
+    description: A Helm chart for Kubernetes
+    digest: 227ed6b003b730fff2d557d51af1f3e94e4eff7b3370612278a47d0bd9f277c6
+    name: radarr
+    type: application
+    urls:
+    - https://github.com/GnorpLabs/GnorpCharts/releases/download/radarr-0.1.1/radarr-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2025-02-03T21:21:12.337528468Z"
     description: A Helm chart for Kubernetes
     digest: d2af1e5ce3bf4031f44ff885f6e6f8d3a708f4e7cb43e7a6a156c102b4cad11f
@@ -159,6 +169,16 @@ entries:
   sonarr:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2025-12-11T05:14:10.839029251Z"
+    description: Smart PVR for newsgroup and bittorrent users
+    digest: ebc1c35d0a87791d4c44b56fe9a7f1a7e8fdb069869f47ceb67bb6b04095a6dd
+    name: sonarr
+    type: application
+    urls:
+    - https://github.com/GnorpLabs/GnorpCharts/releases/download/sonarr-0.1.1/sonarr-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2025-02-03T21:19:53.264998983Z"
     description: Smart PVR for newsgroup and bittorrent users
     digest: e28c31ed874e4b09c3033dab689a4b2e935752d388e549e896175905c792f264
@@ -178,4 +198,4 @@ entries:
     urls:
     - https://github.com/GnorpLabs/GnorpCharts/releases/download/tautulli-0.1.0/tautulli-0.1.0.tgz
     version: 0.1.0
-generated: "2025-10-19T00:36:10.725496292Z"
+generated: "2025-12-11T05:14:10.839051363Z"
