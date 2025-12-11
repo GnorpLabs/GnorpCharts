@@ -101,6 +101,7 @@ astroserversettings:
 # env variables for AstroTuxLauncher
 launcher:
   env:
+    CREATE_LAUNCHER_CONFIG: true # Overwrite launcher config on every restart. If false, it will only generate when one does not exist. default: true
     DEBUG: false # Enables debug logging. default: false
     DISABLE_ENCRYPTION: false # Disables connection encryption. default: false
     FORCE_CHOWN: false # chowns the astrotux folder on startup; potential workaround for an issue. default: false
