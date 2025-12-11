@@ -3,6 +3,35 @@ entries:
   astroneer:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2025-12-11T06:02:07.913147913Z"
+    description: Helm chart to deploy a dedicated server for astroneer using Astroneer
+      Dedicated Server using AstroTuxLauncher
+    digest: a53c1a7ed6e5f2738c7ed4484360074de50433a8a0c389f5ef08bdf5aff1ff3a
+    home: https://github.com/GnorpLabs/GnorpCharts/charts/astroneer
+    icon: https://astroneer.wiki.gg/wiki/Astroneer_Wiki#/media/File:Icon_Astroneer.png
+    keywords:
+    - astroneer
+    - server
+    - kubernetes
+    - helm
+    - game
+    - dedicated-server
+    - game-server
+    maintainers:
+    - name: v4de
+      url: https://github.com/v4de
+    - name: TheWhiteAmigo
+      url: https://github.com/TheWhiteAmigo
+    name: astroneer
+    sources:
+    - https://github.com/birdhimself/astroneer-docker
+    - https://github.com/GnorpLabs/GnorpCharts/charts/astroneer
+    type: application
+    urls:
+    - https://github.com/GnorpLabs/GnorpCharts/releases/download/astroneer-0.1.1/astroneer-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2025-09-05T22:16:47.698677432Z"
     description: Helm chart to deploy a dedicated server for astroneer using Astroneer
       Dedicated Server using AstroTuxLauncher
@@ -198,4 +227,4 @@ entries:
     urls:
     - https://github.com/GnorpLabs/GnorpCharts/releases/download/tautulli-0.1.0/tautulli-0.1.0.tgz
     version: 0.1.0
-generated: "2025-12-11T05:14:10.839051363Z"
+generated: "2025-12-11T06:02:07.913164564Z"
