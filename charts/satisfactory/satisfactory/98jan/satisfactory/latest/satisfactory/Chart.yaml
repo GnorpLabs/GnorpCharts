@@ -1,6 +1,0 @@
-apiVersion: v2
-appVersion: v1.6.1
-description: A Helm chart for deploying a Satisfactory dedicated game server to Kubernetes.
-name: satisfactory
-type: application
-version: 0.1.3
