@@ -1,7 +1,7 @@
 {{- if .Values.config.configMap.enabled }}
 apiVersion: v1
 data:
-  .env: |
+  recyclarr.yml: |
     {{ .Values.config.configMap.recyclarr.data | nindent 4 }}
 kind: ConfigMap
 metadata:

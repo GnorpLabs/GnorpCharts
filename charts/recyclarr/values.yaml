@@ -36,7 +36,7 @@ args: "sync"
 # You can use a config map or env variables. 
 # Either one is acceptable however do not enable both at the same time.
 config:
-  env: {}
+  env: []
     # # Disables ANSI color output for all recyclarr commands. Note: This does not disable color output to the terminal.
     # - name: "NO_COLOR"
     #   value: "1"
@@ -44,13 +44,13 @@ config:
     enabled: true
     recyclarr:
       # ConfigMap to be used for the recyclarr.yaml config
-      name: "recyclarr.yaml"
-      subPath: "recyclarr.yaml"
+      name: "recyclarr-config"
+      subPath: "recyclarr.yml"
       data: |
         sonarr:
           main:
-            base_url: http://sonarr.plex.svc.cluster.local:8989
-            api_key: 581eac46d4a742bb86e24c776413e508
+            base_url: http://sonarr.example.com/
+            api_key: YOUR_SONARR_API_KEY
             delete_old_custom_formats: true
             replace_existing_custom_formats: true
             quality_definition:
@@ -63,7 +63,7 @@ config:
                   allowed: true
                   until_quality: Bluray-1080p
                   until_score: 2000
-                min_format_score: 2000
+                min_format_score: 1600
                 qualities: 
                   - name: Bluray-1080p
                     qualities:
@@ -95,8 +95,8 @@ config:
                 upgrade:
                   allowed: true
                   until_quality: WEBDL-1080p
-                  until_score: 2000
-                min_format_score: 2000
+                  until_score: 1700
+                min_format_score: 5
                 qualities:        
                   - name: Bluray-1080p
                   - name: WEBDL-1080p
