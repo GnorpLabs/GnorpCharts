@@ -1,2 +1,5 @@
 # Configarr
 /charts/configarr
+
+# zone identifier files from wsl
+*.Zone.Identifier

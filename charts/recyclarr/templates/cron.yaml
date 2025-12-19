@@ -29,8 +29,8 @@ spec:
                   mountPath: /config
               {{- if .Values.config.configMap.enabled }}
                 - name: recyclarr-config
-                  mountPath: /config/recyclarr.yaml
-                  subPath: {{.Values.config.configMap.config.subPath}}
+                  mountPath: /config/recyclarr.yml
+                  subPath: {{.Values.config.configMap.recyclarr.subPath}}
               {{- end }}
               {{- if .Values.volumeMounts -}}
                 {{- toYaml .Values.volumeMounts | nindent 12 }}
@@ -45,8 +45,8 @@ spec:
                 {{- end }}
             {{- if .Values.config.configMap.enabled }}
             - configMap:
-                name: {{ .Values.config.configmap.config.name }}
-              name: {{ .Values.config.configmap.config.name }}
+                name: {{ .Values.config.configMap.recyclarr.name }}
+              name: {{ .Values.config.configMap.recyclarr.name }}
             {{- end }}
           {{- if .Values.volumes -}}
             {{- toYaml .Values.volumes | nindent 12 }}
