@@ -162,6 +162,16 @@ entries:
   prowlarr:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2026-05-22T05:49:58.290607889Z"
+    description: A Helm chart for Kubernetes
+    digest: cc2a7151674cdb6ae501c7e981cb2a4e1036b0d7520423524467b3f2a423af1c
+    name: prowlarr
+    type: application
+    urls:
+    - https://github.com/GnorpLabs/GnorpCharts/releases/download/prowlarr-0.1.2/prowlarr-0.1.2.tgz
+    version: 0.1.2
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2026-01-10T03:10:20.074688005Z"
     description: A Helm chart for Kubernetes
     digest: 45ebbb157fd662dad4d3bd6a2d8790ff602e93a976262cfe8adbde7a17c61f2a
@@ -181,6 +191,16 @@ entries:
     - https://github.com/GnorpLabs/GnorpCharts/releases/download/prowlarr-0.1.0/prowlarr-0.1.0.tgz
     version: 0.1.0
   radarr:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2026-05-22T05:49:58.455850822Z"
+    description: A Helm chart for Kubernetes
+    digest: 26145994c874d8f7e0b5e0e7c3378c3da49ad503f745926cf62d320156222a16
+    name: radarr
+    type: application
+    urls:
+    - https://github.com/GnorpLabs/GnorpCharts/releases/download/radarr-0.1.2/radarr-0.1.2.tgz
+    version: 0.1.2
   - apiVersion: v2
     appVersion: 1.16.0
     created: "2025-12-11T05:14:10.677866504Z"
@@ -237,6 +257,16 @@ entries:
   sonarr:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2026-05-22T05:49:58.612826158Z"
+    description: Smart PVR for newsgroup and bittorrent users
+    digest: adea7d29535a6c98f9073a7c074f16ad2864924953c4f50692259ea426fae213
+    name: sonarr
+    type: application
+    urls:
+    - https://github.com/GnorpLabs/GnorpCharts/releases/download/sonarr-0.1.2/sonarr-0.1.2.tgz
+    version: 0.1.2
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2025-12-11T05:14:10.839029251Z"
     description: Smart PVR for newsgroup and bittorrent users
     digest: ebc1c35d0a87791d4c44b56fe9a7f1a7e8fdb069869f47ceb67bb6b04095a6dd
@@ -266,4 +296,4 @@ entries:
     urls:
     - https://github.com/GnorpLabs/GnorpCharts/releases/download/tautulli-0.1.0/tautulli-0.1.0.tgz
     version: 0.1.0
-generated: "2026-01-10T03:10:20.235728883Z"
+generated: "2026-05-22T05:49:58.612856615Z"
