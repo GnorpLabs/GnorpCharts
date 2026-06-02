@@ -1,6 +1,7 @@
 [config]
 model = "openrouter/deepseek/deepseek-coder"
 fallback_models = ["openrouter/deepseek/deepseek-coder"]
+custom_model_max_tokens = 32000
 response_language = "en-US"
 
 [pr_reviewer]
