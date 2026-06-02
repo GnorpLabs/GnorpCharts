@@ -1,6 +1,6 @@
 [config]
-model = "openrouter/z-ai/glm-4.5-air:free"
-fallback_models = ["openrouter/z-ai/glm-4.5-air:free"]
+model = "openrouter/openai/gpt-oss-120b:free"
+fallback_models = ["openrouter/openai/gpt-oss-120b:free"]
 custom_model_max_tokens = 65536
 response_language = "en-US"
 

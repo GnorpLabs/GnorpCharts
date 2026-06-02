@@ -24,8 +24,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENROUTER.KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          config.model: "openrouter/z-ai/glm-4.5-air:free"
-          config.fallback_models: '["openrouter/z-ai/glm-4.5-air:free"]'
+          config.model: "openrouter/openai/gpt-oss-120b:free"
+          config.fallback_models: '["openrouter/openai/gpt-oss-120b:free"]'
           config.custom_model_max_tokens: "65536"
           github_action_config.auto_review: "true"
           github_action_config.auto_describe: "true"
