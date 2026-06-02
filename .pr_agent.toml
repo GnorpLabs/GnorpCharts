@@ -1,6 +1,6 @@
 [config]
-model = "openrouter/qwen/qwen3-next-80b-a3b-instruct:free"
-fallback_models = ["openrouter/qwen/qwen3-next-80b-a3b-instruct:free"]
+model = "openrouter/z-ai/glm-4.5-air:free"
+fallback_models = ["openrouter/z-ai/glm-4.5-air:free"]
 custom_model_max_tokens = 65536
 response_language = "en-US"
 
