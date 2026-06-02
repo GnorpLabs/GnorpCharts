@@ -24,8 +24,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENROUTER.KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          config.model: "openrouter/meta-llama/llama-3.3-70b-instruct:free"
-          config.fallback_models: '["openrouter/meta-llama/llama-3.2-3b-instruct:free"]'
+          config.model: "openrouter/owl-alpha"
+          config.fallback_models: '["openrouter/owl-alpha"]'
           config.custom_model_max_tokens: "65536"
           config.ai_timeout: "120"
           github_action_config.auto_review: "true"

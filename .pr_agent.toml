@@ -1,6 +1,6 @@
 [config]
-model = "openrouter/meta-llama/llama-3.3-70b-instruct:free"
-fallback_models = ["openrouter/meta-llama/llama-3.2-3b-instruct:free"]
+model = "openrouter/owl-alpha"
+fallback_models = ["openrouter/owl-alpha"]
 custom_model_max_tokens = 65536
 ai_timeout = 120
 response_language = "en-US"
