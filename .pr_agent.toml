@@ -1,7 +1,8 @@
 [config]
-model = "openrouter/openai/gpt-oss-120b:free"
-fallback_models = ["openrouter/openai/gpt-oss-120b:free"]
+model = "openrouter/qwen/qwen3-coder:free"
+fallback_models = ["openrouter/qwen/qwen3-next-80b-a3b-instruct:free"]
 custom_model_max_tokens = 65536
+ai_timeout = 300
 response_language = "en-US"
 
 [pr_reviewer]
