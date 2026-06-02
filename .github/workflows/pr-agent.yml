@@ -14,6 +14,9 @@ jobs:
       pull-requests: write
       contents: write
     name: Run PR Agent on every pull request
+    concurrency:
+      group: pr-agent-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
     steps:
       - name: PR Agent action step
         id: pragent
@@ -27,3 +30,5 @@ jobs:
           github_action_config.auto_review: "true"
           github_action_config.auto_describe: "true"
           github_action_config.auto_improve: "false"
+          github_action_config.handle_push_trigger: "true"
+          github_action_config.push_trigger_wait_for_initial_review: "true"
