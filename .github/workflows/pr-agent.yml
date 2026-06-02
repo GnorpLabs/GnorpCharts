@@ -104,7 +104,7 @@ jobs:
               await github.rest.pulls.createReview({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                pull_number: PRNumber,
+                pull_number: prNumber,
                 event: 'APPROVE',
                 body: '🤖 PR-Agent auto-approval: Review passed with no critical issues.',
               });
