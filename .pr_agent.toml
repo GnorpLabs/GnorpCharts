@@ -1,7 +1,7 @@
 [config]
-model = "openrouter/deepseek/deepseek-chat:free"
-fallback_models = ["openrouter/deepseek/deepseek-chat:free"]
-custom_model_max_tokens = 32000
+model = "openrouter/qwen/qwen3-coder:free"
+fallback_models = ["openrouter/qwen/qwen3-coder:free"]
+custom_model_max_tokens = 65536
 response_language = "en-US"
 
 [pr_reviewer]
