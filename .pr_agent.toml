@@ -1,0 +1,32 @@
+[config]
+model = "openrouter/deepseek/deepseek-coder"
+fallback_models = ["openrouter/deepseek/deepseek-coder"]
+response_language = "en-US"
+
+[pr_reviewer]
+require_score_review = false
+require_tests_review = false
+require_estimate_effort_to_review = true
+require_security_review = true
+require_ticket_analysis_review = false
+publish_output_no_suggestions = true
+persistent_comment = true
+enable_review_labels_security = true
+enable_review_labels_effort = true
+extra_instructions = ""
+num_max_findings = 5
+
+[pr_description]
+publish_labels = false
+add_original_user_description = true
+generate_ai_title = false
+use_bullet_points = true
+enable_pr_type = true
+enable_pr_diagram = false
+publish_description_as_comment = false
+
+[pr_code_suggestions]
+num_code_suggestions = 0
+
+[github]
+deployment_type = "user"
