@@ -23,6 +23,7 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           config.model: "openrouter/deepseek/deepseek-coder"
           config.fallback_models: '["openrouter/deepseek/deepseek-coder"]'
+          config.custom_model_max_tokens: "32000"
           github_action_config.auto_review: "true"
           github_action_config.auto_describe: "true"
           github_action_config.auto_improve: "false"
