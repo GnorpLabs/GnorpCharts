@@ -23,7 +23,7 @@ jobs:
         uses: the-pr-agent/pr-agent@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER.KEY: ${{ secrets.OPENROUTER_API_KEY }}
           config.model: "openrouter/deepseek/deepseek-coder"
           config.fallback_models: '["openrouter/deepseek/deepseek-coder"]'
           config.custom_model_max_tokens: "32000"
