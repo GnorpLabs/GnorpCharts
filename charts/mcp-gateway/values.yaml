@@ -1,0 +1,139 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/mikkoparkkola/mcp-gateway
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 39400
+
+ingress:
+  enabled: true
+  className: "traefik"
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    cert-manager.io/cluster-issuer: cloudflare-issuer
+  hosts:
+    - host: mcp-gateway.gnorplabs.cc
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: mcp-gateway-certificate
+      hosts:
+        - mcp-gateway.gnorplabs.cc
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+persistence:
+  enabled: false
+  storageClass: "freenas-iscsi-csi"
+  accessMode: ReadWriteOnce
+  size: 1Gi
+
+stdioBackends:
+  enabled: false
+  nodeImage: "node:22-slim"
+  packages: []
+  # - "@modelcontextprotocol/server-filesystem@1.0.0"
+
+gateway:
+  server:
+    host: "0.0.0.0"
+    port: 39400
+    requestTimeout: 30s
+    shutdownTimeout: 30s
+  auth:
+    enabled: true
+    bearerToken: "auto"
+  metaMcp:
+    enabled: true
+    cacheTools: true
+    cacheTtl: 300s
+    warmStart: []
+  failsafe:
+    circuitBreaker:
+      enabled: true
+      failureThreshold: 5
+      successThreshold: 3
+      resetTimeout: 30s
+    retry:
+      enabled: true
+      maxAttempts: 3
+      initialBackoff: 0s
+      maxBackoff: 10s
+      multiplier: 2.0
+    rateLimit:
+      enabled: true
+      requestsPerSecond: 100
+      burstSize: 50
+    healthCheck:
+      enabled: true
+      interval: 30s
+      timeout: 5s
+  cache:
+    enabled: true
+    defaultTtl: 60s
+    maxEntries: 10000
+  capabilities:
+    enabled: false
+  security:
+    sanitizeInput: true
+    ssrfProtection: true
+    toolPolicy:
+      enabled: true
+      defaultAction: allow
+      useDefaultDeny: false
+      logDenied: true
+    firewall:
+      enabled: true
+      scanRequests: true
+      scanResponses: true
+      promptInjectionDetection: true
+      credentialRedaction: true
+  backends: {}
+  env: {}
+  envFromSecrets: []
