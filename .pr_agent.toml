@@ -1,6 +1,6 @@
 [config]
-model = "openrouter/deepseek/deepseek-coder"
-fallback_models = ["openrouter/deepseek/deepseek-coder"]
+model = "openrouter/deepseek/deepseek-chat:free"
+fallback_models = ["openrouter/deepseek/deepseek-chat:free"]
 custom_model_max_tokens = 32000
 response_language = "en-US"
 
