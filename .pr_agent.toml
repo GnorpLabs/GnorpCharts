@@ -1,8 +1,7 @@
 [config]
 model = "openrouter/owl-alpha"
-fallback_models = ["openrouter/owl-alpha"]
+fallback_models = ["openrouter/qwen/qwen3-coder:free"]
 custom_model_max_tokens = 65536
-ai_timeout = 120
 response_language = "en-US"
 
 [pr_reviewer]
