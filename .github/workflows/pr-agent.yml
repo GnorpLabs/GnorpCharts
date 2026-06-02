@@ -24,10 +24,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENROUTER.KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          config.model: "openrouter/qwen/qwen3-coder:free"
-          config.fallback_models: '["openrouter/qwen/qwen3-next-80b-a3b-instruct:free"]'
+          config.model: "openrouter/meta-llama/llama-3.3-70b-instruct:free"
+          config.fallback_models: '["openrouter/meta-llama/llama-3.2-3b-instruct:free"]'
           config.custom_model_max_tokens: "65536"
-          config.ai_timeout: "300"
+          config.ai_timeout: "120"
           github_action_config.auto_review: "true"
           github_action_config.auto_describe: "true"
           github_action_config.auto_improve: "false"

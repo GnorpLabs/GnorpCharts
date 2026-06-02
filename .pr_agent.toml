@@ -1,8 +1,8 @@
 [config]
-model = "openrouter/qwen/qwen3-coder:free"
-fallback_models = ["openrouter/qwen/qwen3-next-80b-a3b-instruct:free"]
+model = "openrouter/meta-llama/llama-3.3-70b-instruct:free"
+fallback_models = ["openrouter/meta-llama/llama-3.2-3b-instruct:free"]
 custom_model_max_tokens = 65536
-ai_timeout = 300
+ai_timeout = 120
 response_language = "en-US"
 
 [pr_reviewer]
