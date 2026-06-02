@@ -1,4 +1,4 @@
-name: PR Agent
+name: PR Agent Auto-Approve
 
 on:
   pull_request:
@@ -13,10 +13,7 @@ jobs:
       issues: write
       pull-requests: write
       contents: write
-    name: Run PR Agent on every pull request
-    concurrency:
-      group: pr-agent-${{ github.event.pull_request.number || github.ref }}
-      cancel-in-progress: true
+    name: Run PR Agent Review
     steps:
       - name: PR Agent action step
         id: pragent
@@ -32,3 +29,64 @@ jobs:
           github_action_config.auto_improve: "false"
           github_action_config.handle_push_trigger: "true"
           github_action_config.push_trigger_wait_for_initial_review: "true"
+
+  auto_approve:
+    needs: pr_agent_job
+    if: ${{ github.event.sender.type != 'Bot' }}
+    runs-on: ${{ github.event.repository.private && 'self-hosted' || 'ubuntu-latest' }}
+    permissions:
+      pull-requests: write
+      contents: read
+    name: Auto-approve if review is clean
+    steps:
+      - name: Check PR-Agent review and approve
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Get the latest review comment from github-actions bot
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              per_page: 10,
+            });
+            
+            // Find the most recent PR-Agent review comment
+            const botComments = comments.filter(c => 
+              c.user.login === 'github-actions[bot]' && 
+              c.body.includes('PR Reviewer Guide')
+            );
+            
+            if (botComments.length === 0) {
+              console.log('No PR-Agent review found yet, skipping approval');
+              return;
+            }
+            
+            const latestReview = botComments[botComments.length - 1];
+            const reviewBody = latestReview.body;
+            
+            // Check for critical issues that should block auto-approval
+            const hasSecurityConcerns = reviewBody.includes('Security concerns') && 
+              !reviewBody.includes('Security concerns</strong><br><br>\n\nNo security');
+            const hasCriticalFindings = reviewBody.includes('🔴') || reviewBody.includes('⛔');
+            
+            if (hasSecurityConcerns || hasCriticalFindings) {
+              console.log('Critical issues found, requesting changes instead of approving');
+              await github.rest.pulls.createReview({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.pull_request.number,
+                event: 'REQUEST_CHANGES',
+                body: '🤖 PR-Agent found critical issues that need to be addressed before this can be merged. Please review the findings above and make the necessary changes.',
+              });
+            } else {
+              console.log('No critical issues found, auto-approving');
+              await github.rest.pulls.createReview({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.pull_request.number,
+                event: 'APPROVE',
+                body: '🤖 PR-Agent auto-approval: No critical issues found. Review passed.',
+              });
+            }
