@@ -129,6 +129,17 @@ entries:
     urls:
     - https://github.com/GnorpLabs/GnorpCharts/releases/download/kube-plex-0.3.7/kube-plex-0.3.7.tgz
     version: 0.3.7
+  mcp-gateway:
+  - apiVersion: v2
+    appVersion: latest
+    created: "2026-06-03T02:53:14.081049088Z"
+    description: A Helm chart for MCP Gateway - Universal MCP Gateway with Meta-MCP
+    digest: 5b7ac72d9d837a90e617eb123b579463e4d359e1a8e74967cfbf81d5b38e2dba
+    name: mcp-gateway
+    type: application
+    urls:
+    - https://github.com/GnorpLabs/GnorpCharts/releases/download/mcp-gateway-0.1.0/mcp-gateway-0.1.0.tgz
+    version: 0.1.0
   overseerr:
   - apiVersion: v2
     appVersion: 1.16.0
@@ -296,4 +307,4 @@ entries:
     urls:
     - https://github.com/GnorpLabs/GnorpCharts/releases/download/tautulli-0.1.0/tautulli-0.1.0.tgz
     version: 0.1.0
-generated: "2026-05-22T05:49:58.612856615Z"
+generated: "2026-06-03T02:53:14.081065377Z"
