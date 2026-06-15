@@ -56,35 +56,45 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
-            - name: media
-              mountPath: /tv
-              {{- if .Values.persistence.media.subPath }}
-              subPath: {{ .Values.persistence.media.subPath }}
-              {{- end }}
             - name: config
               mountPath: /config
               {{- if .Values.persistence.config.subPath }}
               subPath: {{ .Values.persistence.config.subPath }}
               {{- end }}
+            {{- if .Values.persistence.data.claimName }}
+            - name: data
+              mountPath: /data
+            {{- else }}
+            - name: media
+              mountPath: /data
+              {{- if .Values.persistence.media.subPath }}
+              subPath: {{ .Values.persistence.media.subPath }}
+              {{- end }}
             - name: downloads
-              mountPath: /downloads
+              mountPath: /data/usenet
               {{- if .Values.persistence.downloads.subPath }}
               subPath: {{ .Values.persistence.downloads.subPath }}
               {{- end }}
-      volumes:
-        - name: media
-          persistentVolumeClaim:
-            {{- if .Values.persistence.media.claimName }}
-            claimName: "{{ .Values.persistence.media.claimName }}"
-            {{- else }}
-            claimName: "{{ template "sonarr.fullname" . }}-media"
             {{- end }}
+      volumes:
         - name: config
           persistentVolumeClaim:
             {{- if .Values.persistence.config.claimName }}
             claimName: "{{ .Values.persistence.config.claimName }}"
             {{- else }}
             claimName: "{{ template "sonarr.fullname" . }}-config"
+            {{- end }}
+        {{- if .Values.persistence.data.claimName }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: "{{ .Values.persistence.data.claimName }}"
+        {{- else }}
+        - name: media
+          persistentVolumeClaim:
+            {{- if .Values.persistence.media.claimName }}
+            claimName: "{{ .Values.persistence.media.claimName }}"
+            {{- else }}
+            claimName: "{{ template "sonarr.fullname" . }}-media"
             {{- end }}
         - name: downloads
           persistentVolumeClaim:
@@ -93,6 +103,7 @@ spec:
               {{- else }}
               claimName: "{{ template "sonarr.fullname" . }}-downloads"
               {{- end }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
