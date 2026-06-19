@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "clonarr.fullname" . }}
+  labels:
+    {{- include "clonarr.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "clonarr.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "clonarr.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "clonarr.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: TZ
+              value: {{ .Values.env.TZ | quote }}
+            - name: PUID
+              value: {{ .Values.env.PUID | quote }}
+            - name: PGID
+              value: {{ .Values.env.PGID | quote }}
+            {{- if .Values.env.PORT }}
+            - name: PORT
+              value: {{ .Values.env.PORT | quote }}
+            {{- end }}
+            {{- if .Values.env.CONFIG_DIR }}
+            - name: CONFIG_DIR
+              value: {{ .Values.env.CONFIG_DIR | quote }}
+            {{- end }}
+            {{- if .Values.env.DATA_DIR }}
+            - name: DATA_DIR
+              value: {{ .Values.env.DATA_DIR | quote }}
+            {{- end }}
+            {{- if .Values.env.URL_BASE }}
+            - name: URL_BASE
+              value: {{ .Values.env.URL_BASE | quote }}
+            {{- end }}
+            {{- if .Values.env.TRUSTED_NETWORKS }}
+            - name: TRUSTED_NETWORKS
+              value: {{ .Values.env.TRUSTED_NETWORKS | quote }}
+            {{- end }}
+            {{- if .Values.env.TRUSTED_PROXIES }}
+            - name: TRUSTED_PROXIES
+              value: {{ .Values.env.TRUSTED_PROXIES | quote }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: 6060
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            {{- with .Values.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.config.claimName | default (printf "%s-config" (include "clonarr.fullname" .)) }}
+        {{- with .Values.volumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
