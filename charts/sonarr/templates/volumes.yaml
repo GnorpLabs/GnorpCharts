@@ -1,3 +1,5 @@
+{{- if .Values.persistence.data.claimName }}
+{{- else }}
 {{- if not .Values.persistence.config.claimName}}
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -63,4 +65,5 @@ spec:
   storageClassName: {{ .Values.persistence.media.storageClass | quote }}
 {{- end }}
 ---
+{{- end }}
 {{- end }}

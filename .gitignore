@@ -1,5 +1,9 @@
 # Configarr
 /charts/configarr
 
+# Superpowers (internal development artifacts)
+docs/superpowers/
+.superpowers/
+
 # zone identifier files from wsl
 *.Zone.Identifier
