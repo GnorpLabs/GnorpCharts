@@ -88,6 +88,17 @@ entries:
     urls:
     - https://github.com/GnorpLabs/GnorpCharts/releases/download/astroneer-0.1.0/astroneer-0.1.0.tgz
     version: 0.1.0
+  clonarr:
+  - apiVersion: v2
+    appVersion: latest
+    created: "2026-06-20T03:37:12.387658121Z"
+    description: Visual TRaSH Guides sync tool for Radarr and Sonarr
+    digest: 571ec48e078d4f45ec3625a7caa5ed2f03822b7a532edaffb18e54e6f6cd6a4b
+    name: clonarr
+    type: application
+    urls:
+    - https://github.com/GnorpLabs/GnorpCharts/releases/download/clonarr-0.1.0/clonarr-0.1.0.tgz
+    version: 0.1.0
   imagemaid:
   - apiVersion: v2
     appVersion: 1.16.0
@@ -327,4 +338,4 @@ entries:
     urls:
     - https://github.com/GnorpLabs/GnorpCharts/releases/download/tautulli-0.1.0/tautulli-0.1.0.tgz
     version: 0.1.0
-generated: "2026-06-15T03:35:12.724849966Z"
+generated: "2026-06-20T03:37:12.38771117Z"
