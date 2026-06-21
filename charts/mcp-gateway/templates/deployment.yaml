@@ -39,8 +39,8 @@ spec:
           command: ["sh", "-c"]
           args:
             - |
-              {{- range .Values.stdioBackends.packages }}
-              npm install -g {{ . }}
+              {{- range .Values.stdioBackends.backends }}
+              npm install -g {{ .package }}
               {{- end }}
           volumeMounts:
             - name: npx-bin

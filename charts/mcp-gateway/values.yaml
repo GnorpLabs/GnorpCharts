@@ -77,8 +77,26 @@ persistence:
 stdioBackends:
   enabled: false
   nodeImage: "node:22-slim"
-  packages: []
-  # - "@modelcontextprotocol/server-filesystem@1.0.0"
+  backends: []
+  # - name: filesystem
+  #   package: "@modelcontextprotocol/server-filesystem@1.0.0"
+  #   command: "mcp-server-filesystem"
+  #   args: []
+  #   description: "Local filesystem access"
+  #   env: {}
+
+httpBackends: []
+# - name: brave-search
+#   image: mcp/brave-search:latest
+#   port: 3000
+#   path: "/mcp"           # optional, defaults to /mcp
+#   description: "Brave web search"
+#   env: {}
+#   envFromSecrets: []
+#   #   - name: BRAVE_API_KEY
+#   #     secretName: brave-api-secret
+#   #     secretKey: api-key
+#   resources: {}
 
 gateway:
   server:
