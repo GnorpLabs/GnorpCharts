@@ -6,4 +6,25 @@ metadata:
     {{- include "mcp-gateway.labels" . | nindent 4 }}
 data:
   gateway.yaml: |
-    {{- toYaml .Values.gateway | nindent 4 }}
+    {{- /* Start from gateway values, strip chart-internal keys */ -}}
+    {{- $config := omit .Values.gateway "env" "envFromSecrets" | deepCopy -}}
+    {{- /* Seed the backends map from any user-defined gateway.backends */ -}}
+    {{- $backends := $config.backends | default dict | deepCopy -}}
+    {{- /* Auto-inject HTTP backends */ -}}
+    {{- range .Values.httpBackends -}}
+      {{- $path := .path | default "/mcp" -}}
+      {{- $url := printf "http://%s:%v%s" .name .port $path -}}
+      {{- $backend := dict "http_url" $url "description" (.description | default .name) -}}
+      {{- $_ := set $backends .name $backend -}}
+    {{- end -}}
+    {{- /* Auto-inject stdio backends */ -}}
+    {{- if .Values.stdioBackends.enabled -}}
+      {{- range .Values.stdioBackends.backends -}}
+        {{- $backend := dict "command" .command "description" (.description | default .name) -}}
+        {{- if .args -}}{{- $_ := set $backend "args" .args -}}{{- end -}}
+        {{- if .env -}}{{- $_ := set $backend "env" .env -}}{{- end -}}
+        {{- $_ := set $backends .name $backend -}}
+      {{- end -}}
+    {{- end -}}
+    {{- $_ := set $config "backends" $backends -}}
+    {{- toYaml $config | nindent 4 }}
