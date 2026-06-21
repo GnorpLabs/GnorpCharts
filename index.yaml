@@ -309,6 +309,16 @@ entries:
   seerr:
   - apiVersion: v2
     appVersion: v3.3.0
+    created: "2026-06-21T22:54:38.687573589Z"
+    description: A Helm chart for Kubernetes
+    digest: 366709312ddc82180499f227863f7b3cfaea4b4c420ba59445a7bd67bd96e85a
+    name: seerr
+    type: application
+    urls:
+    - https://github.com/GnorpLabs/GnorpCharts/releases/download/seerr-0.2.1/seerr-0.2.1.tgz
+    version: 0.2.1
+  - apiVersion: v2
+    appVersion: v3.3.0
     created: "2026-06-21T17:43:52.864379513Z"
     description: A Helm chart for Kubernetes
     digest: 8a93bd9d11c099a3ac365f7d59cfc28afbce1ad27d4a0bca2ecc984ecf3ced97
@@ -369,4 +379,4 @@ entries:
     urls:
     - https://github.com/GnorpLabs/GnorpCharts/releases/download/tautulli-0.1.0/tautulli-0.1.0.tgz
     version: 0.1.0
-generated: "2026-06-21T22:48:44.157368266Z"
+generated: "2026-06-21T22:54:38.687610734Z"
