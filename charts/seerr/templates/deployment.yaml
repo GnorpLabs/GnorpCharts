@@ -33,13 +33,6 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
-            runAsNonRoot: true
-            runAsUser: 1000
-            runAsGroup: 1000
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -48,10 +41,6 @@ spec:
               containerPort: {{ .Values.service.port }}
               protocol: TCP
           env:
-            - name: PUID
-              value: "{{ .Values.env.PUID }}"
-            - name: PGID
-              value: "{{ .Values.env.PGID }}"
             - name: TZ
               value: "{{ .Values.env.TZ }}"
           livenessProbe:
