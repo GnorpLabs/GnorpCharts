@@ -105,8 +105,6 @@ autoscaling:
 
 #container environment variables
 env:
-  PUID: "5000"
-  PGID: "1001"
   TZ: "America/New_York"
 
 #PVC for config, Plex Media, & Downloads
