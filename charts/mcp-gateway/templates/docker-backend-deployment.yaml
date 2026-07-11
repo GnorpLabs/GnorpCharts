@@ -1,0 +1,122 @@
+{{- if .Values.dockerBackends }}
+{{- range .Values.dockerBackends }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mcp-gateway.fullname" $ }}-{{ .name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "mcp-gateway.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: docker-backend
+    app.kubernetes.io/backend: {{ .name }}
+spec:
+  {{- if .lifecycle.enabled }}
+  replicas: {{ .lifecycle.minReplicas | default 0 }}
+  {{- else }}
+  replicas: {{ .lifecycle.minReplicas | default 1 }}
+  {{- end }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "mcp-gateway.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/backend: {{ .name }}
+  template:
+    metadata:
+      labels:
+        {{- include "mcp-gateway.selectorLabels" $ | nindent 8 }}
+        app.kubernetes.io/component: docker-backend
+        app.kubernetes.io/backend: {{ .name }}
+      {{- with .podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .imagePullSecrets | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "mcp-gateway.serviceAccountName" $ }}
+      {{- with .securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .name }}
+          image: {{ .image }}
+          imagePullPolicy: {{ .imagePullPolicy | default "IfNotPresent" }}
+          ports:
+            - name: http
+              containerPort: {{ .port }}
+              protocol: TCP
+          {{- if .env }}
+          env:
+            {{- toYaml .env | nindent 12 }}
+          {{- end }}
+          {{- if .envFrom }}
+          envFrom:
+            {{- toYaml .envFrom | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            {{- if .persistence.enabled }}
+            - name: data
+              mountPath: {{ .persistence.mountPath }}
+            {{- end }}
+            {{- if and .config .config.enabled }}
+            - name: config
+              mountPath: {{ .config.mountPath }}
+              subPath: config.yaml
+              readOnly: true
+            {{- end }}
+          {{- with .healthCheck }}
+          readinessProbe:
+            httpGet:
+              path: {{ .path }}
+              port: {{ .port }}
+            initialDelaySeconds: {{ .initialDelaySeconds | default 10 }}
+            periodSeconds: {{ .periodSeconds | default 10 }}
+            timeoutSeconds: {{ .timeoutSeconds | default 5 }}
+            failureThreshold: {{ .failureThreshold | default 3 }}
+          livenessProbe:
+            httpGet:
+              path: {{ .path }}
+              port: {{ .port }}
+            initialDelaySeconds: {{ add (.initialDelaySeconds | default 10) 30 }}
+            periodSeconds: 30
+            timeoutSeconds: {{ .timeoutSeconds | default 5 }}
+            failureThreshold: 3
+          {{- end }}
+          {{- with .resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        {{- if .persistence.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "mcp-gateway.fullname" $ }}-{{ .name }}-data
+        {{- end }}
+        {{- if and .config .config.enabled }}
+        - name: config
+          configMap:
+            name: {{ .config.configMapName | default (printf "%s-%s-config" (include "mcp-gateway.fullname" $) .name) }}
+        {{- end }}
+      {{- with .nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+{{- end }}

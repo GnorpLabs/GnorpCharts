@@ -1,0 +1,70 @@
+{{- if .Values.dockerBackends }}
+{{- range .Values.dockerBackends }}
+{{- if .config.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .config.configMapName | default (printf "%s-%s-config" (include "mcp-gateway.fullname" $) .name) }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "mcp-gateway.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: docker-backend
+    app.kubernetes.io/backend: {{ .name }}
+data:
+  config.yaml: |
+    workers:
+      - name: iii-http
+        config:
+          port: {{ .port }}
+          host: "[IP_ADDRESS]"
+          default_timeout: 180000
+          cors:
+            allowed_origins: ["http://localhost:{{ .port }}", "http://localhost:{{ .port | add 2 }}", "http://[IP_ADDRESS]:{{ .port }}", "http://[IP_ADDRESS]:{{ .port | add 2 }}"]
+            allowed_methods: [GET, POST, PUT, DELETE, OPTIONS]
+      - name: iii-state
+        config:
+          adapter:
+            name: kv
+            config:
+              store_method: file_based
+              file_path: /data/state_store.db
+      - name: iii-queue
+        config:
+          adapter:
+            name: builtin
+      - name: iii-pubsub
+        config:
+          adapter:
+            name: local
+      - name: iii-cron
+        config:
+          adapter:
+            name: kv
+      - name: iii-stream
+        config:
+          port: {{ .port | add 1 }}
+          host: "[IP_ADDRESS]"
+          adapter:
+            name: kv
+            config:
+              store_method: file_based
+              file_path: /data/stream_store
+      - name: iii-observability
+        config:
+          enabled: true
+          service_name: {{ .name }}
+          exporter: memory
+          sampling_ratio: 0.1
+          metrics_enabled: true
+          logs_enabled: true
+          logs_console_output: false
+      - name: iii-exec
+        config:
+          watch:
+            - src/**/*.ts
+          exec:
+            - node dist/index.mjs
+{{- end }}
+{{- end }}
+{{- end }}

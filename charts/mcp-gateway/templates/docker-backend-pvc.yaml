@@ -1,0 +1,25 @@
+{{- if .Values.dockerBackends }}
+{{- range .Values.dockerBackends }}
+{{- if .persistence.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "mcp-gateway.fullname" $ }}-{{ .name }}-data
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "mcp-gateway.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: docker-backend
+    app.kubernetes.io/backend: {{ .name }}
+spec:
+  accessModes:
+    - {{ .persistence.accessMode | default "ReadWriteOnce" }}
+  {{- if .persistence.storageClass }}
+  storageClassName: {{ .persistence.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .persistence.size }}
+{{- end }}
+{{- end }}
+{{- end }}

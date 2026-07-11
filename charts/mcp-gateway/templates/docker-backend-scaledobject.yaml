@@ -1,0 +1,41 @@
+{{- if .Values.dockerBackends }}
+{{- range .Values.dockerBackends }}
+{{- if .lifecycle.enabled }}
+---
+apiVersion: http.keda.sh/v1alpha1
+kind: HTTPScaledObject
+metadata:
+  name: {{ include "mcp-gateway.fullname" $ }}-{{ .name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "mcp-gateway.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: docker-backend
+    app.kubernetes.io/backend: {{ .name }}
+spec:
+  # Target deployment to scale
+  scaleTargetRef:
+    name: {{ include "mcp-gateway.fullname" $ }}-{{ .name }}
+    service: {{ include "mcp-gateway.fullname" $ }}-{{ .name }}
+    port: {{ .port }}
+    deployment: {{ include "mcp-gateway.fullname" $ }}-{{ .name }}
+  
+  # Hosts that route to this backend
+  hosts:
+    - {{ include "mcp-gateway.fullname" $ }}-{{ .name }}.{{ $.Release.Namespace }}.svc.cluster.local
+  
+  # Replica configuration
+  replicas:
+    min: {{ .lifecycle.minReplicas | default 0 }}
+    max: {{ .lifecycle.maxReplicas | default 1 }}
+  
+  # Scale-to-zero configuration
+  scaledownPeriod: {{ .lifecycle.idleTimeoutSeconds | default 300 }}
+  
+  # HTTP routing configuration
+  targetPendingRequests: {{ .lifecycle.targetPendingRequests | default 1 }}
+  
+  # How long to queue requests during cold start (seconds)
+  cooldownPeriod: {{ .lifecycle.coldStartTimeout | default 60 }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,24 @@
+{{- if .Values.dockerBackends }}
+{{- range .Values.dockerBackends }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "mcp-gateway.fullname" $ }}-{{ .name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "mcp-gateway.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: docker-backend
+    app.kubernetes.io/backend: {{ .name }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "mcp-gateway.selectorLabels" $ | nindent 4 }}
+    app.kubernetes.io/backend: {{ .name }}
+{{- end }}
+{{- end }}
