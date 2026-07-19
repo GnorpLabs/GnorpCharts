@@ -60,8 +60,13 @@ service:
 # URL. This will not survive being accessed through this hostname-based
 # ingress and gracefully degrades to the viewer's existing 10s HTTP-polling
 # fallback -- a known upstream limitation, not something this chart solves.
+# Viewer ingress disabled: agentmemory v0.9.28 requires AGENTMEMORY_SECRET when
+# binding the viewer to non-loopback. Since this deployment is intentionally
+# unauthenticated, the viewer stays on loopback and is accessed via:
+#   kubectl port-forward -n mcp-gateway svc/agentmemory 3113:3113
+# then open http://localhost:3113 in your browser.
 ingress:
-  enabled: true
+  enabled: false
   className: "traefik"
   annotations: {}
   host: "agentmemory.gnorplabs.cc"

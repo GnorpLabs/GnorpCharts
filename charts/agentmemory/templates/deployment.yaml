@@ -39,12 +39,9 @@ spec:
           env:
             - name: TZ
               value: {{ .Values.env.TZ | quote }}
-            # Bind the viewer to all interfaces so Traefik can reach the pod IP.
-            - name: AGENTMEMORY_VIEWER_HOST
-              value: "0.0.0.0"
-            # Allow the ingress hostname as a valid Host header.
-            - name: VIEWER_ALLOWED_HOSTS
-              value: "localhost:3113,127.0.0.1:3113,{{ .Values.ingress.host }}"
+            # Viewer intentionally stays on loopback (no AGENTMEMORY_VIEWER_HOST set).
+            # v0.9.28 enforces that non-loopback viewer bind requires AGENTMEMORY_SECRET.
+            # Access the viewer via: kubectl port-forward -n mcp-gateway svc/agentmemory 3113:3113
             # TODO: wire optional LLM/embedding provider keys here via
             # .Values.providerSecrets.existingSecret once needed.
           ports:
