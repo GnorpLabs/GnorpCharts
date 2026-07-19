@@ -1,0 +1,150 @@
+# Default values for agentmemory.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/gnorplabs/agentmemory
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+# Namespace agentmemory is deployed into (shared with mcp-gateway, its
+# primary in-cluster consumer). This field is informational only; the actual
+# namespace is set at the helm/helmfile release level.
+namespace: "mcp-gateway"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+# fsGroup 1000 matches the image's `USER node` (uid 1000, node:22-slim base)
+# so the /data PersistentVolume is writable without a chown init container.
+podSecurityContext:
+  fsGroup: 1000
+
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+
+service:
+  type: ClusterIP
+  ports:
+    # REST API + MCP HTTP surface. Consumed in-cluster (e.g. by mcp-gateway)
+    # via the Service DNS name; intentionally not exposed via ingress.
+    http: 3111
+    # Internal iii-engine stream worker. Not exposed externally.
+    stream: 3112
+    # Real-time viewer UI. The only port exposed via ingress.
+    viewer: 3113
+    # iii-engine websocket (worker registration). Not exposed externally.
+    engine: 49134
+    # Prometheus-style metrics.
+    metrics: 9464
+
+# Only the viewer is exposed via ingress. The viewer's frontend proxies REST
+# calls to the API server-side (browser never calls port 3111 directly), so
+# the API needs no public hostname of its own.
+#
+# Note: live-update WebSocket connections (port 3112) are made directly from
+# the browser using client-side port arithmetic that assumes a raw `:port`
+# URL. This will not survive being accessed through this hostname-based
+# ingress and gracefully degrades to the viewer's existing 10s HTTP-polling
+# fallback -- a known upstream limitation, not something this chart solves.
+ingress:
+  enabled: true
+  className: "traefik"
+  annotations: {}
+  host: "agentmemory.gnorplabs.cc"
+  path: /
+  pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+# PVC for the /data directory (state store + stream store).
+persistence:
+  # Optionally specify claimName to manually override the PVC to be used.
+  # If claimName is specified, storageClass and size are ignored.
+  # claimName: ""
+  storageClass: "freenas-iscsi-csi"
+  size: 5Gi
+  accessMode: ReadWriteOnce
+
+# iii-engine config, rendered into a ConfigMap and mounted over
+# /app/config.yaml. This intentionally replaces the config baked into the
+# image (docker/agentmemory/iii-config.yaml in GnorpLabs), which has a
+# broken `host: [IP_ADDRESS]` placeholder on the iii-http/iii-stream
+# workers -- unquoted in YAML this parses as a one-item array, not a valid
+# bind address. This chart mirrors agentmemory's own known-working
+# iii-config.docker.yaml (0.0.0.0 binds) instead.
+config:
+  # Extra CORS allowed_origins appended alongside the localhost defaults and
+  # the ingress viewer hostname (auto-included when ingress.enabled).
+  corsExtraOrigins: []
+
+env:
+  TZ: "UTC"
+
+# TODO: wire optional LLM/embedding provider keys (ANTHROPIC_API_KEY,
+# OPENAI_API_KEY, GEMINI_API_KEY, VOYAGE_API_KEY, etc.) via an
+# existingSecret reference once needed. Intentionally left out of v1 --
+# agentmemory runs in BM25-only / zero-external-call mode without them.
+# providerSecrets:
+#   existingSecret: ""
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 500m
+  #   memory: 512Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 256Mi
+
+# Generous startup probe to cover the ~9-10s cold start (npm package init +
+# iii engine boot) without triggering restart loops.
+startupProbe:
+  httpGet:
+    path: /agentmemory/livez
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 3
+  timeoutSeconds: 3
+  failureThreshold: 10
+
+livenessProbe:
+  httpGet:
+    path: /agentmemory/livez
+    port: http
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /agentmemory/health
+    port: http
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
