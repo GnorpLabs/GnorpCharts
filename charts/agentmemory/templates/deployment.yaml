@@ -39,6 +39,12 @@ spec:
           env:
             - name: TZ
               value: {{ .Values.env.TZ | quote }}
+            # Bind the viewer to all interfaces so Traefik can reach the pod IP.
+            - name: AGENTMEMORY_VIEWER_HOST
+              value: "0.0.0.0"
+            # Allow the ingress hostname as a valid Host header.
+            - name: VIEWER_ALLOWED_HOSTS
+              value: "localhost:3113,127.0.0.1:3113,{{ .Values.ingress.host }}"
             # TODO: wire optional LLM/embedding provider keys here via
             # .Values.providerSecrets.existingSecret once needed.
           ports:
