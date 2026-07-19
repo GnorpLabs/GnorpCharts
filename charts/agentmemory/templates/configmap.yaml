@@ -1,3 +1,13 @@
+{{/*
+  ConfigMap is kept for CORS extra-origins injection only. The iii-config.yaml
+  that iii-engine actually reads is written by the image's entrypoint.sh at
+  /opt/agentmemory/node_modules/@agentmemory/agentmemory/dist/iii-config.yaml
+  with host: 0.0.0.0 so the pod IP is reachable for probes and Service traffic.
+
+  This ConfigMap is not mounted in the Deployment. It exists so that the chart
+  can be extended in future to inject additional CORS origins or other config
+  overrides via an init container if needed.
+*/}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -5,65 +15,9 @@ metadata:
   labels:
     {{- include "agentmemory.labels" . | nindent 4 }}
 data:
-  # Mirrors agentmemory's own known-working iii-config.docker.yaml (0.0.0.0
-  # binds) instead of the broken `host: [IP_ADDRESS]` config baked into the
-  # GnorpLabs image. See docs/superpowers/specs/2026-07-19-agentmemory-helmchart-design.md
-  # for the full rationale.
-  config.yaml: |
-    workers:
-      - name: iii-http
-        config:
-          port: {{ .Values.service.ports.http }}
-          host: 0.0.0.0
-          default_timeout: 180000
-          cors:
-            allowed_origins:
-              - "http://localhost:{{ .Values.service.ports.http }}"
-              - "http://localhost:{{ .Values.service.ports.viewer }}"
-              - "http://127.0.0.1:{{ .Values.service.ports.http }}"
-              - "http://127.0.0.1:{{ .Values.service.ports.viewer }}"
-              {{- if .Values.ingress.enabled }}
-              - "https://{{ .Values.ingress.host }}"
-              - "http://{{ .Values.ingress.host }}"
-              {{- end }}
-              {{- range .Values.config.corsExtraOrigins }}
-              - {{ . | quote }}
-              {{- end }}
-            allowed_methods: [GET, POST, PUT, DELETE, OPTIONS]
-      - name: iii-state
-        config:
-          adapter:
-            name: kv
-            config:
-              store_method: file_based
-              file_path: /data/state_store.db
-      - name: iii-queue
-        config:
-          adapter:
-            name: builtin
-      - name: iii-pubsub
-        config:
-          adapter:
-            name: local
-      - name: iii-cron
-        config:
-          adapter:
-            name: kv
-      - name: iii-stream
-        config:
-          port: {{ .Values.service.ports.stream }}
-          host: 0.0.0.0
-          adapter:
-            name: kv
-            config:
-              store_method: file_based
-              file_path: /data/stream_store
-      - name: iii-observability
-        config:
-          enabled: true
-          service_name: agentmemory
-          exporter: memory
-          sampling_ratio: 0.1
-          metrics_enabled: true
-          logs_enabled: true
-          logs_console_output: false
+  # Extra CORS origins for the iii-http worker, if needed.
+  # Currently unused -- the entrypoint.sh writes a static config.
+  corsExtraOrigins: |
+    {{- range .Values.config.corsExtraOrigins }}
+    - {{ . | quote }}
+    {{- end }}

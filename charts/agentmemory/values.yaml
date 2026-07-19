@@ -28,14 +28,13 @@ serviceAccount:
 podAnnotations: {}
 podLabels: {}
 
-# fsGroup 1000 matches the image's `USER node` (uid 1000, node:22-slim base)
-# so the /data PersistentVolume is writable without a chown init container.
-podSecurityContext:
-  fsGroup: 1000
+# The agentmemory image's own entrypoint (the `agentmemory` CLI) runs as
+# root and chowns /data to the `node` user before dropping privileges, so the
+# container must run as root (no forced runAsUser/runAsGroup/fsGroup). This
+# matches the mcp-gateway chart's empty security context.
+podSecurityContext: {}
 
-securityContext:
-  runAsUser: 1000
-  runAsGroup: 1000
+securityContext: {}
 
 service:
   type: ClusterIP
@@ -88,8 +87,12 @@ persistence:
 # broken `host: [IP_ADDRESS]` placeholder on the iii-http/iii-stream
 # workers -- unquoted in YAML this parses as a one-item array, not a valid
 # bind address. This chart mirrors agentmemory's own known-working
-# iii-config.docker.yaml (0.0.0.0 binds) instead.
+# iii-config.docker.yaml ([IP_ADDRESS] = all-interfaces bind) instead.
 config:
+  # Bind host for the iii-http / iii-stream workers. Leave empty to let
+  # iii-engine default to all-interfaces (so the pod IP is reachable by
+  # kubelet probes). Set to a specific address only if needed.
+  bindHost: ""
   # Extra CORS allowed_origins appended alongside the localhost defaults and
   # the ingress viewer hostname (auto-included when ingress.enabled).
   corsExtraOrigins: []
@@ -116,8 +119,8 @@ resources: {}
   #   cpu: 100m
   #   memory: 256Mi
 
-# Generous startup probe to cover the ~9-10s cold start (npm package init +
-# iii engine boot) without triggering restart loops.
+# Probes omit `host` so kubelet dials the pod IP directly. The chart's iii
+# config binds [IP_ADDRESS] (all interfaces), so the pod IP is reachable.
 startupProbe:
   httpGet:
     path: /agentmemory/livez
@@ -137,7 +140,7 @@ livenessProbe:
 
 readinessProbe:
   httpGet:
-    path: /agentmemory/health
+    path: /agentmemory/livez
     port: http
   periodSeconds: 10
   timeoutSeconds: 5

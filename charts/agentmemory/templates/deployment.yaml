@@ -68,17 +68,10 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
-            - name: config
-              mountPath: /app/config.yaml
-              subPath: config.yaml
-              readOnly: true
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: {{ .Values.persistence.claimName | default (printf "%s-data" (include "agentmemory.fullname" .)) }}
-        - name: config
-          configMap:
-            name: {{ include "agentmemory.fullname" . }}-config
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
