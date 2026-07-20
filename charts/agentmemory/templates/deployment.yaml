@@ -39,11 +39,12 @@ spec:
           env:
             - name: TZ
               value: {{ .Values.env.TZ | quote }}
-            # Viewer intentionally stays on loopback (no AGENTMEMORY_VIEWER_HOST set).
-            # v0.9.28 enforces that non-loopback viewer bind requires AGENTMEMORY_SECRET.
-            # Access the viewer via: kubectl port-forward -n mcp-gateway svc/agentmemory 3113:3113
-            # TODO: wire optional LLM/embedding provider keys here via
-            # .Values.providerSecrets.existingSecret once needed.
+            # Host headers the viewer trusts (gate-free; needs no secret).
+            # Intentionally NO AGENTMEMORY_SECRET (would auth-gate the MCP API)
+            # and NO AGENTMEMORY_VIEWER_HOST (non-loopback fatally requires the
+            # secret). The viewer stays loopback; the socat sidecar re-exposes it.
+            - name: VIEWER_ALLOWED_HOSTS
+              value: {{ .Values.env.VIEWER_ALLOWED_HOSTS | quote }}
           ports:
             - name: http
               containerPort: {{ .Values.service.ports.http }}
@@ -71,6 +72,72 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+        {{- if .Values.viewerProxy.enabled }}
+        # socat sidecar: the no-secret viewer binds loopback (127.0.0.1:3113) only.
+        # Containers in a pod share the network namespace, so this sidecar can
+        # reach that loopback listener and re-expose it on the pod IP. The
+        # Service's viewer port targets this container (viewer-proxy), which
+        # Traefik's agentmemory TCP entrypoint routes to.
+        - name: viewer-proxy
+          image: {{ .Values.viewerProxy.image | quote }}
+          args:
+            - "TCP-LISTEN:{{ .Values.viewerProxy.listenPort }},fork,reuseaddr"
+            - "TCP:127.0.0.1:{{ .Values.service.ports.viewer }}"
+          ports:
+            - name: viewer-proxy
+              containerPort: {{ .Values.viewerProxy.listenPort }}
+              protocol: TCP
+          {{- with .Values.viewerProxy.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.mcpBridge.enabled }}
+        # MCP bridge: agentmemory has no MCP-over-HTTP endpoint; its real MCP
+        # interface is the stdio server (`agentmemory mcp`). supergateway wraps
+        # it as Streamable HTTP at :{{ .Values.mcpBridge.port }}/mcp for
+        # mcp-gateway. Reuses the app image (node + CLI already present). The
+        # stdio server reaches the in-pod REST API on localhost:3111.
+        - name: mcp-bridge
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["sh", "-c"]
+          args:
+            - >-
+              cd /tmp &&
+              exec npx -y supergateway@{{ .Values.mcpBridge.supergatewayVersion }}
+              --stdio "agentmemory mcp"
+              --outputTransport streamableHttp
+              --port {{ .Values.mcpBridge.port }}
+              --healthEndpoint /healthz
+          env:
+            - name: TZ
+              value: {{ .Values.env.TZ | quote }}
+          ports:
+            - name: mcp-bridge
+              containerPort: {{ .Values.mcpBridge.port }}
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: mcp-bridge
+            # npx downloads supergateway on first start; allow ample time.
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 24
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: mcp-bridge
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          {{- with .Values.mcpBridge.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        {{- end }}
       volumes:
         - name: data
           persistentVolumeClaim:

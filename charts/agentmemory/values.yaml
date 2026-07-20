@@ -51,20 +51,25 @@ service:
     # Prometheus-style metrics.
     metrics: 9464
 
-# Only the viewer is exposed via ingress. The viewer's frontend proxies REST
-# calls to the API server-side (browser never calls port 3111 directly), so
-# the API needs no public hostname of its own.
+# HTTP ingress for the viewer is DISABLED by design. An HTTP (hostname-based)
+# ingress would require the viewer to bind non-loopback, which agentmemory
+# v0.11.2 only allows with AGENTMEMORY_SECRET set -- and that same secret also
+# turns on auth for the whole REST/MCP API, which this deployment must keep
+# OPEN (mcp-gateway consumes it unauthenticated in-cluster).
 #
-# Note: live-update WebSocket connections (port 3112) are made directly from
-# the browser using client-side port arithmetic that assumes a raw `:port`
-# URL. This will not survive being accessed through this hostname-based
-# ingress and gracefully degrades to the viewer's existing 10s HTTP-polling
-# fallback -- a known upstream limitation, not something this chart solves.
-# Viewer ingress disabled: agentmemory v0.9.28 requires AGENTMEMORY_SECRET when
-# binding the viewer to non-loopback. Since this deployment is intentionally
-# unauthenticated, the viewer stays on loopback and is accessed via:
-#   kubectl port-forward -n mcp-gateway svc/agentmemory 3113:3113
-# then open http://localhost:3113 in your browser.
+# Instead the viewer is exposed via raw Traefik TCP entrypoints (see
+# templates/ingress-tcp.yaml + ingressTCP below). With no AGENTMEMORY_SECRET
+# the viewer binds loopback INSIDE the pod, so a small socat sidecar
+# (viewerProxy below) re-exposes it on the pod IP: Traefik TCP :3113 ->
+# Service viewer port -> sidecar :13113 -> 127.0.0.1:3113 (shared pod netns).
+# The live-update WebSocket worker (iii-stream, :3112) already binds
+# all-interfaces, so its TCP route goes straight to the pod. Result:
+#   http://<lan-host>:3113   viewer UI + server-side REST proxy (no auth)
+#   ws://<lan-host>:3112     live updates
+#
+# PREREQUISITE (one-time, global Traefik config -- not this chart): the k3s
+# Traefik HelmChartConfig must define TCP entrypoints "agentmemory" (:3113)
+# and "agentmemory-ws" (:3112). See GnorpLabs/k3s/traefik/traefik-config.yaml.
 ingress:
   enabled: false
   className: "traefik"
@@ -73,9 +78,45 @@ ingress:
   path: /
   pathType: ImplementationSpecific
   tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
+
+# Raw TCP exposure of the viewer through Traefik (no auth, no secret).
+# Renders two IngressRouteTCP objects targeting this chart's Service.
+ingressTCP:
+  enabled: true
+  # Traefik entrypoint names (must exist in the global Traefik config).
+  viewerEntryPoint: "agentmemory"
+  wsEntryPoint: "agentmemory-ws"
+
+# socat sidecar that forwards pod-IP traffic to the viewer's loopback-only
+# listener (127.0.0.1:3113). Listens on containerPort 13113; the Service's
+# viewer port targets it. Required because the no-secret viewer refuses to
+# bind non-loopback (see ingress comment above).
+viewerProxy:
+  enabled: true
+  image: "alpine/socat:latest"
+  listenPort: 13113
+  resources:
+    requests: {cpu: 5m, memory: 8Mi}
+    limits: {cpu: 50m, memory: 32Mi}
+
+# MCP bridge sidecar: agentmemory's HTTP server exposes NO MCP JSON-RPC
+# endpoint (its /agentmemory/mcp/* paths are custom REST wrappers). The real
+# MCP interface is the stdio server (`agentmemory mcp`, aka @agentmemory/mcp).
+# This sidecar reuses the app image (node + agentmemory CLI already inside)
+# and runs supergateway to wrap that stdio server as Streamable HTTP on
+# `port` at path /mcp. mcp-gateway consumes it via:
+#   http://agentmemory.<ns>.svc.cluster.local:3114/mcp   (no auth)
+# The stdio server talks to the in-pod REST API via its default
+# AGENTMEMORY_URL=http://localhost:3111 (shared pod network namespace).
+mcpBridge:
+  enabled: true
+  port: 3114
+  # Pinned for reproducibility; npx fetches it at container start (needs
+  # registry access). Bake into the image later if cold-start matters.
+  supergatewayVersion: "3.4.3"
+  resources:
+    requests: {cpu: 25m, memory: 64Mi}
+    limits: {cpu: 500m, memory: 256Mi}
 
 # PVC for the /data directory (state store + stream store).
 persistence:
@@ -102,8 +143,21 @@ config:
   # the ingress viewer hostname (auto-included when ingress.enabled).
   corsExtraOrigins: []
 
+# No AGENTMEMORY_SECRET and no AGENTMEMORY_VIEWER_HOST -- intentional.
+# With the secret unset, agentmemory v0.11.2 serves the entire REST/MCP API
+# fully open (checkAuth returns open when the secret is falsy), which is what
+# mcp-gateway needs for zero-auth in-cluster consumption. The viewer binds
+# loopback inside the pod and is re-exposed by the socat sidecar (viewerProxy).
+# Do NOT set AGENTMEMORY_SECRET: it would auth-gate the MCP API as a side
+# effect. Do NOT set AGENTMEMORY_VIEWER_HOST: a non-loopback value makes the
+# process fatally exit without a secret.
+#
+# VIEWER_ALLOWED_HOSTS extends the viewer's Host-header allowlist (the viewer
+# 403s "forbidden host" otherwise). It is gate-free -- setting it does NOT
+# require the secret. Must contain every host:port the browser will use.
 env:
   TZ: "UTC"
+  VIEWER_ALLOWED_HOSTS: "localhost:3113,agentmemory.gnorplabs.cc:3113"
 
 # TODO: wire optional LLM/embedding provider keys (ANTHROPIC_API_KEY,
 # OPENAI_API_KEY, GEMINI_API_KEY, VOYAGE_API_KEY, etc.) via an

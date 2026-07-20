@@ -16,7 +16,13 @@ spec:
       protocol: TCP
       name: stream
     - port: {{ .Values.service.ports.viewer }}
+      {{- if .Values.viewerProxy.enabled }}
+      # Route through the socat sidecar: the no-secret viewer binds loopback
+      # inside the pod, so the pod-IP-facing listener is the sidecar.
+      targetPort: viewer-proxy
+      {{- else }}
       targetPort: viewer
+      {{- end }}
       protocol: TCP
       name: viewer
     - port: {{ .Values.service.ports.engine }}
@@ -27,5 +33,13 @@ spec:
       targetPort: metrics
       protocol: TCP
       name: metrics
+    {{- if .Values.mcpBridge.enabled }}
+    # Streamable HTTP MCP endpoint (supergateway sidecar wrapping the stdio
+    # `agentmemory mcp` server). Consumed in-cluster by mcp-gateway.
+    - port: {{ .Values.mcpBridge.port }}
+      targetPort: mcp-bridge
+      protocol: TCP
+      name: mcp
+    {{- end }}
   selector:
     {{- include "agentmemory.selectorLabels" . | nindent 4 }}
