@@ -115,8 +115,8 @@ mcpBridge:
   # registry access). Bake into the image later if cold-start matters.
   supergatewayVersion: "3.4.3"
   resources:
-    requests: {cpu: 25m, memory: 64Mi}
-    limits: {cpu: 500m, memory: 256Mi}
+    requests: {cpu: 25m, memory: 256Mi}
+    limits: {cpu: 500m, memory: 1Gi}
 
 # PVC for the /data directory (state store + stream store).
 persistence:
