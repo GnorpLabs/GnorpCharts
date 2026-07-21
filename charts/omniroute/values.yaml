@@ -1,0 +1,97 @@
+# OmniRoute Helm Chart Values
+# Copy this file to omniroute-values.yaml and customize for your deployment
+
+# ── Replicas ─────────────────────────────────────────────────────────────────
+replicaCount: 1
+
+# ── Image Configuration ─────────────────────────────────────────────────────
+image:
+  repository: diegosouzapw/omniroute
+  tag: "latest"  # Use "latest-web" for browser-based providers (gemini-web, claude-web, claude-turnstile)
+  pullPolicy: IfNotPresent
+
+# ── Optional Sidecars ───────────────────────────────────────────────────────
+# All sidecars run in the same pod as OmniRoute (localhost networking)
+
+redis:
+  enabled: false  # Rate limiting backend (recommended)
+
+qdrant:
+  enabled: false  # Semantic memory store (for >1M points or cross-instance memory)
+
+bifrost:
+  enabled: false  # Tier-1 LLM router (offloads routing to Go sidecar)
+
+cliproxyapi:
+  enabled: false  # CLI proxy API sidecar
+
+# ── Persistence ────────────────────────────────────────────────────────────
+persistence:
+  existingClaim: ""  # Use existing PVC name (overrides create)
+  create: false     # Auto-create PVC with volumeClaimTemplates
+  storageClass: "standard"  # Kubernetes storage class
+  accessMode: ReadWriteOnce
+  size: 1Gi         # Storage size for SQLite database
+
+# ── Secrets ────────────────────────────────────────────────────────────────
+secrets:
+  autoGenerate: true   # Generate JWT_SECRET, API_KEY_SECRET automatically
+  existingSecret: ""   # Use existing secret instead of auto-generate
+  # Override individual secrets (only used if autoGenerate: false)
+  jwtSecret: ""
+  apiKeySecret: ""
+
+# ── Service Configuration ─────────────────────────────────────────────────
+service:
+  type: ClusterIP
+  ports:
+    dashboard:
+      enabled: true
+      port: 20128
+      targetPort: 20128
+    api:
+      enabled: false   # Set true for split-port mode (dashboard:port, api:port)
+      port: 20129
+      targetPort: 20129
+    ws:
+      enabled: false   # Set true to expose WebSocket port
+      port: 20132
+      targetPort: 20132
+
+# ── Resources ───────────────────────────────────────────────────────────────
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1536Mi  # Node.js heap is 1024MB by default (OMNIROUTE_MEMORY_MB)
+  requests:
+    cpu: 250m
+    memory: 1024Mi
+
+# ── Additional Environment Variables ────────────────────────────────────────
+env: {}  # Example: { OMNI_MAX_CONCURRENT_CONNECTIONS: "50" }
+
+envFromSecrets: []  # Example: [{ name: MY_API_KEY, secretName: my-secret, secretKey: key }]
+
+# ── Service Account ───────────────────────────────────────────────────────────
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+# ── Ingress Configuration ─────────────────────────────────────────────────────
+ingress:
+  enabled: false
+  className: "traefik"
+  annotations: {}
+  hosts:
+    - host: omniroute.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# ── Node Scheduling (Optional) ─────────────────────────────────────────────
+nodeSelector: {}
+tolerations: []
+affinity: {}

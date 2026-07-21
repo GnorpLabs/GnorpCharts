@@ -1,0 +1,6 @@
+apiVersion: v2
+name: omniroute
+description: A Helm chart for OmniRoute - Unified AI proxy for 271 LLM providers
+type: application
+version: 0.1.0
+appVersion: "latest"

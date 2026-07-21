@@ -1,0 +1,146 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "omniroute.fullname" . }}
+  labels:
+    {{- include "omniroute.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  serviceName: {{ include "omniroute.fullname" . }}
+  selector:
+    matchLabels:
+      {{- include "omniroute.selectorLabels" . | nindent 6 }}
+  {{- if and .Values.persistence.create (not .Values.persistence.existingClaim) }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - {{ .Values.persistence.accessMode }}
+        storageClassName: {{ .Values.persistence.storageClass }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.size }}
+  {{- else if .Values.persistence.existingClaim }}
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: {{ .Values.persistence.existingClaim }}
+  {{- end }}
+  template:
+    metadata:
+      labels:
+        {{- include "omniroute.labels" . | nindent 8 }}
+    spec:
+      containers:
+        # Core OmniRoute container
+        - name: omniroute
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            {{- if .Values.service.ports.dashboard.enabled }}
+            - name: dashboard
+              containerPort: {{ .Values.service.ports.dashboard.targetPort }}
+              protocol: TCP
+            {{- end }}
+            {{- if .Values.service.ports.api.enabled }}
+            - name: api
+              containerPort: {{ .Values.service.ports.api.targetPort }}
+              protocol: TCP
+            {{- end }}
+            {{- if .Values.service.ports.ws.enabled }}
+            - name: ws
+              containerPort: {{ .Values.service.ports.ws.targetPort }}
+              protocol: TCP
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "omniroute.fullname" . }}-config
+            {{- if .Values.secrets.autoGenerate }}
+            - secretRef:
+                name: {{ include "omniroute.fullname" . }}-secrets
+            {{- else if .Values.secrets.existingSecret }}
+            - secretRef:
+                name: {{ .Values.secrets.existingSecret }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if or .Values.persistence.existingClaim .Values.persistence.create }}
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+          {{- end }}
+        # Redis sidecar
+        {{- if .Values.redis.enabled }}
+        - name: redis
+          image: docker.io/library/redis:7-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: redis
+              containerPort: 6379
+              protocol: TCP
+          args: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+        {{- end }}
+        # Qdrant sidecar
+        {{- if .Values.qdrant.enabled }}
+        - name: qdrant
+          image: docker.io/qdrant/qdrant:v1.12.4
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 6333
+            - name: grpc
+              containerPort: 6334
+          env:
+            - name: QDRANT__SERVICE__GRPC_PORT
+              value: "6334"
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 200m
+              memory: 256Mi
+        {{- end }}
+        # Bifrost sidecar
+        {{- if .Values.bifrost.enabled }}
+        - name: bifrost
+          image: ghcr.io/maximhq/bifrost:1.5.21
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+        {{- end }}
+        # CLIProxyAPI sidecar
+        {{- if .Values.cliproxyapi.enabled }}
+        - name: cliproxyapi
+          image: ghcr.io/router-for-me/cliproxyapi:v6.9.7
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8317
+          env:
+            - name: PORT
+              value: "8317"
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+        {{- end }}

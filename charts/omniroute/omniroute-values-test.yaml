@@ -1,0 +1,86 @@
+# OmniRoute Test Deployment Values
+# This file configures a minimal test deployment
+# Deploy to mcp-gateway namespace: helm install omniroute . -f omniroute-values-test.yaml --namespace mcp-gateway
+
+replicaCount: 1
+
+image:
+  repository: diegosouzapw/omniroute
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+# No sidecars for initial testing
+redis:
+  enabled: false
+
+qdrant:
+  enabled: false
+
+bifrost:
+  enabled: false
+
+cliproxyapi:
+  enabled: false
+
+# Auto-create PVC with your iSCSI storage class
+persistence:
+  existingClaim: ""
+  create: true
+  storageClass: "freenas-iscsi-csi"
+  accessMode: ReadWriteOnce
+  size: 1Gi
+
+# Auto-generate secrets
+secrets:
+  autoGenerate: true
+  existingSecret: ""
+  jwtSecret: ""
+  apiKeySecret: ""
+
+service:
+  type: ClusterIP
+  ports:
+    dashboard:
+      enabled: true
+      port: 20128
+      targetPort: 20128
+    api:
+      enabled: false
+      port: 20129
+      targetPort: 20129
+    ws:
+      enabled: false
+      port: 20132
+      targetPort: 20132
+
+# Enable ingress for testing
+ingress:
+  enabled: true
+  className: "traefik"
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    cert-manager.io/cluster-issuer: cloudflare-issuer
+  hosts:
+    - host: omniroute.gnorplabs.cc
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: omniroute-certificate
+      hosts:
+        - omniroute.gnorplabs.cc
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1536Mi
+  requests:
+    cpu: 250m
+    memory: 1024Mi
+
+env: {}
+envFromSecrets: []
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

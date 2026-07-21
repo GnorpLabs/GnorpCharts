@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "omniroute.fullname" . }}
+  labels:
+    {{- include "omniroute.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    {{- if .Values.service.ports.dashboard.enabled }}
+    - name: dashboard
+      port: {{ .Values.service.ports.dashboard.port }}
+      targetPort: {{ .Values.service.ports.dashboard.targetPort }}
+      protocol: TCP
+    {{- end }}
+    {{- if .Values.service.ports.api.enabled }}
+    - name: api
+      port: {{ .Values.service.ports.api.port }}
+      targetPort: {{ .Values.service.ports.api.targetPort }}
+      protocol: TCP
+    {{- end }}
+    {{- if .Values.service.ports.ws.enabled }}
+    - name: ws
+      port: {{ .Values.service.ports.ws.port }}
+      targetPort: {{ .Values.service.ports.ws.targetPort }}
+      protocol: TCP
+    {{- end }}
+    {{- if .Values.redis.enabled }}
+    - name: redis
+      port: 6379
+      targetPort: 6379
+      protocol: TCP
+    {{- end }}
+    {{- if .Values.qdrant.enabled }}
+    - name: qdrant-http
+      port: 6333
+      targetPort: 6333
+      protocol: TCP
+    {{- end }}
+    {{- if .Values.bifrost.enabled }}
+    - name: bifrost
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+    {{- end }}
+    {{- if .Values.cliproxyapi.enabled }}
+    - name: cliproxyapi
+      port: 8317
+      targetPort: 8317
+      protocol: TCP
+    {{- end }}
+  selector:
+    {{- include "omniroute.selectorLabels" . | nindent 4 }}
