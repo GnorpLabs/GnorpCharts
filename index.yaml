@@ -161,6 +161,17 @@ entries:
     urls:
     - https://github.com/GnorpLabs/GnorpCharts/releases/download/mcp-gateway-0.1.0/mcp-gateway-0.1.0.tgz
     version: 0.1.0
+  omniroute:
+  - apiVersion: v2
+    appVersion: latest
+    created: "2026-07-22T14:34:03.254744199Z"
+    description: A Helm chart for OmniRoute - Unified AI proxy for 271 LLM providers
+    digest: e1e31a24c285f87581a48352155c9e563ae0e37e5fde065476cc47040798b03b
+    name: omniroute
+    type: application
+    urls:
+    - https://github.com/GnorpLabs/GnorpCharts/releases/download/omniroute-0.1.0/omniroute-0.1.0.tgz
+    version: 0.1.0
   overseerr:
   - apiVersion: v2
     appVersion: 1.16.0
@@ -379,4 +390,4 @@ entries:
     urls:
     - https://github.com/GnorpLabs/GnorpCharts/releases/download/tautulli-0.1.0/tautulli-0.1.0.tgz
     version: 0.1.0
-generated: "2026-06-21T22:54:38.687610734Z"
+generated: "2026-07-22T14:34:03.25478853Z"
