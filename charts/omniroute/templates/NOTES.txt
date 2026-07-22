@@ -1,0 +1,28 @@
+Thank you for installing OmniRoute!
+
+Your release is named {{ .Release.Name }}.
+
+To access the dashboard:
+{{- if .Values.service.ports.dashboard.enabled }}
+1. Port-forward: kubectl port-forward svc/{{ include "omniroute.fullname" . }} {{ .Values.service.ports.dashboard.port }}:{{ .Values.service.ports.dashboard.port }}
+2. Open http://localhost:{{ .Values.service.ports.dashboard.port }} in your browser
+{{- end }}
+
+{{- if .Values.secrets.autoGenerate }}
+The initial admin password is: CHANGEME
+Change it immediately via Dashboard → Settings → Security
+{{- end }}
+
+Enabled components:
+{{- if .Values.redis.enabled }}
+- Redis (rate limiting) on port 6379
+{{- end }}
+{{- if .Values.qdrant.enabled }}
+- Qdrant (semantic memory) on port 6333
+{{- end }}
+{{- if .Values.bifrost.enabled }}
+- Bifrost (LLM router) on port 8080
+{{- end }}
+{{- if .Values.cliproxyapi.enabled }}
+- CLIProxyAPI on port 8317
+{{- end }}
