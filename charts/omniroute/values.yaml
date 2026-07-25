@@ -67,6 +67,39 @@ resources:
     cpu: 250m
     memory: 1024Mi
 
+# ── Public URL ────────────────────────────────────────────────────────────────
+# Sets NEXT_PUBLIC_BASE_URL and OMNIROUTE_PUBLIC_BASE_URL, which OmniRoute uses
+# to compute OAuth redirect_uri values. When left empty, the chart auto-derives
+# the URL from the first ingress host (https:// if TLS is configured, http://
+# otherwise). Set explicitly if your public URL differs from the ingress host.
+publicUrl: ""
+
+# ── OAuth Provider Credentials ────────────────────────────────────────────────
+# Google-based providers (Gemini, Antigravity) ship bundled OAuth credentials
+# that only accept loopback redirects (127.0.0.1). For remote/k8s deployments
+# you have two options:
+#
+# Option 1 — Use envFromSecrets to inject custom provider OAuth credentials.
+# Register your own OAuth app with your public URL as the redirect URI, store
+# the credentials as a k8s secret, and reference them here. Example:
+#
+#   kubectl create secret generic omniroute-oauth \
+#     -n mcp-gateway \
+#     --from-literal=GEMINI_OAUTH_CLIENT_ID=<id> \
+#     --from-literal=GEMINI_OAUTH_CLIENT_SECRET=<secret> \
+#     --from-literal=ANTIGRAVITY_OAUTH_CLIENT_ID=<id> \
+#     --from-literal=ANTIGRAVITY_OAUTH_CLIENT_SECRET=<secret>
+#
+#   envFromSecrets:
+#     - name: GEMINI_OAUTH_CLIENT_ID
+#       secretName: omniroute-oauth
+#       secretKey: GEMINI_OAUTH_CLIENT_ID
+#     ... etc
+#
+# Option 2 — Use kubectl port-forward to do the OAuth flow locally:
+#   kubectl port-forward -n mcp-gateway statefulset/omniroute 20128:20128
+#   Then open http://localhost:20128 and connect providers normally.
+
 # ── Additional Environment Variables ────────────────────────────────────────
 env: {}  # Example: { OMNI_MAX_CONCURRENT_CONNECTIONS: "50" }
 

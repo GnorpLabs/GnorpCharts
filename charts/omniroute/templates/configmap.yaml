@@ -7,6 +7,21 @@ metadata:
 data:
   NODE_ENV: "production"
   PORT: "{{ .Values.service.ports.dashboard.port }}"
+  {{- /* Derive the public base URL for OAuth redirect_uri computation.
+       Explicit publicUrl always wins; otherwise infer from ingress host + TLS. */}}
+  {{- if .Values.publicUrl }}
+  NEXT_PUBLIC_BASE_URL: {{ .Values.publicUrl | quote }}
+  OMNIROUTE_PUBLIC_BASE_URL: {{ .Values.publicUrl | quote }}
+  {{- else if and .Values.ingress.enabled .Values.ingress.hosts }}
+  {{- $host := (index .Values.ingress.hosts 0).host }}
+  {{- if .Values.ingress.tls }}
+  NEXT_PUBLIC_BASE_URL: {{ printf "https://%s" $host | quote }}
+  OMNIROUTE_PUBLIC_BASE_URL: {{ printf "https://%s" $host | quote }}
+  {{- else }}
+  NEXT_PUBLIC_BASE_URL: {{ printf "http://%s" $host | quote }}
+  OMNIROUTE_PUBLIC_BASE_URL: {{ printf "http://%s" $host | quote }}
+  {{- end }}
+  {{- end }}
 {{- if .Values.redis.enabled }}
   REDIS_URL: "redis://localhost:6379"
 {{- end }}
