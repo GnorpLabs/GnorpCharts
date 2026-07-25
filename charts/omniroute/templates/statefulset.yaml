@@ -32,6 +32,11 @@ spec:
       labels:
         {{- include "omniroute.labels" . | nindent 8 }}
     spec:
+      # OmniRoute runs as UID 1000 (node). fsGroup ensures the mounted PVC is
+      # chowned to this group on attach, allowing the process to write its
+      # SQLite database and logs to /app/data.
+      securityContext:
+        fsGroup: 1000
       containers:
         # Core OmniRoute container
         - name: omniroute
