@@ -91,6 +91,15 @@ ingress:
           pathType: Prefix
   tls: []
 
+# ── Security Context ──────────────────────────────────────────────────────────
+# OmniRoute runs as the 'node' user (UID 1000). fsGroup ensures the mounted
+# PVC is chowned to this group on attach so the process can write its SQLite
+# database and logs to /app/data.
+podSecurityContext:
+  fsGroup: 1000
+
+securityContext: {}
+
 # ── Node Scheduling (Optional) ─────────────────────────────────────────────
 nodeSelector: {}
 tolerations: []
