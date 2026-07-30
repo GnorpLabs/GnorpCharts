@@ -1,5 +1,16 @@
 apiVersion: v1
 entries:
+  agentmemory:
+  - apiVersion: v2
+    appVersion: latest
+    created: "2026-07-30T01:27:32.262136901Z"
+    description: Persistent memory server for AI coding agents (iii engine + MCP)
+    digest: ef867ab3524de937bcaae213b169f03fe62d651f22099e473d8e1e6070c1268c
+    name: agentmemory
+    type: application
+    urls:
+    - https://github.com/GnorpLabs/GnorpCharts/releases/download/agentmemory-0.1.0/agentmemory-0.1.0.tgz
+    version: 0.1.0
   astroneer:
   - apiVersion: v2
     appVersion: 1.16.0
@@ -400,4 +411,4 @@ entries:
     urls:
     - https://github.com/GnorpLabs/GnorpCharts/releases/download/tautulli-0.1.0/tautulli-0.1.0.tgz
     version: 0.1.0
-generated: "2026-07-25T18:38:09.413113797Z"
+generated: "2026-07-30T01:27:32.441004178Z"
