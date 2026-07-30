@@ -107,6 +107,7 @@ gateway:
   auth:
     enabled: true
     bearerToken: "auto"
+
   metaMcp:
     enabled: true
     cacheTools: true

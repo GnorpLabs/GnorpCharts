@@ -1,4 +1,4 @@
-{{- if .Values.ingress.enabled -}}
+{{- if and .Values.ingress.enabled .Values.auth.enabled -}}
 {{- $fullName := include "agentmemory.fullname" . -}}
 {{- $svcPort := .Values.service.ports.viewer -}}
 apiVersion: networking.k8s.io/v1

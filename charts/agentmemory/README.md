@@ -77,6 +77,15 @@ helm delete agentmemory -n mcp-gateway
 | `persistence.size` | PVC size | `5Gi` |
 | `persistence.accessMode` | Access mode | `ReadWriteOnce` |
 
+### Authentication parameters
+
+| Name | Description | Value |
+|------|-------------|-------|
+| `auth.enabled` | Enable authentication for API and viewer | `true` |
+| `auth.autoGenerate` | Auto-generate a random secret on first install | `true` |
+| `auth.existingSecret` | Use an existing Kubernetes Secret | `""` |
+| `auth.secret` | Manually specify secret value (if autoGenerate=false) | `""` |
+
 ### Config parameters
 
 | Name | Description | Value |
@@ -88,6 +97,7 @@ helm delete agentmemory -n mcp-gateway
 | Name | Description | Value |
 |------|-------------|-------|
 | `env.TZ` | Timezone | `"UTC"` |
+| `env.AGENTMEMORY_VIEWER_HOST` | Viewer bind address (when auth enabled) | `"0.0.0.0"` |
 | `resources` | Resource limits/requests | `{}` |
 | `startupProbe` / `livenessProbe` / `readinessProbe` | Health probes | see `values.yaml` |
 | `nodeSelector` | Node selector | `{}` |
@@ -110,9 +120,66 @@ The image bakes in `docker/agentmemory/iii-config.yaml` (from GnorpLabs), which 
 
 Agentmemory stores its state store (`/data/state_store.db`) and stream store (`/data/stream_store`) on a single PVC mounted at `/data`. `podSecurityContext.fsGroup: 1000` matches the image's `USER node` (uid 1000) so the volume is writable without a chown init container.
 
-### Security
+### Authentication
 
-No authentication (`AGENTMEMORY_SECRET`) is configured by default -- the API and viewer are unauthenticated. This is a deliberate v1 tradeoff since agentmemory is only intended to be reachable within the trusted cluster/LAN. See the design doc for details.
+**Default:** Authentication is **enabled** by default with an auto-generated secret.
+
+The authentication secret is a bearer token (random hex string, similar to `openssl rand -hex 32` output).
+
+#### Four Ways to Provide the Secret
+
+**1. Auto-generate (default):**
+```yaml
+auth:
+  enabled: true
+  autoGenerate: true
+```
+- Generates a random secret on first install
+- Stored in K8s Secret `<release>-auth` with `helm.sh/resource-policy: keep`
+- Extract with: `kubectl get secret <release>-auth -n <namespace> -o jsonpath='{.data.agentmemory-secret}' | base64 -d`
+
+**2. Manual secret (BYO):**
+```yaml
+auth:
+  enabled: true
+  autoGenerate: false
+  secret: "your-64-char-hex-string-here"
+```
+Generate your own: `openssl rand -hex 32`
+
+**3. Token replacement (GitOps):**
+```yaml
+auth:
+  enabled: true
+  autoGenerate: false
+  secret: "__AGENTMEMORY_SECRET__"
+```
+Your CI/CD pipeline replaces `__AGENTMEMORY_SECRET__` with the actual value from secrets.
+
+**4. Existing K8s Secret:**
+```yaml
+auth:
+  enabled: true
+  existingSecret: "my-secret-name"
+```
+The secret must have a key named `agentmemory-secret`.
+
+#### Auth Enabled vs Disabled
+
+When `auth.enabled=true`:
+- REST/MCP API requires Bearer token authentication
+- Viewer requires authentication
+- Viewer binds to `0.0.0.0` (all interfaces)
+- Standard HTTP ingress is used
+
+When `auth.enabled=false` (legacy mode):
+- No authentication on API or viewer
+- Viewer binds to `127.0.0.1` (loopback only)
+- Requires socat sidecar to expose viewer
+- Uses raw TCP ingress instead of HTTP
+
+**Integration with mcp-gateway:**
+See `DEPLOYMENT.md` for sharing the secret with mcp-gateway (two patterns supported).
 
 ## Upgrading
 

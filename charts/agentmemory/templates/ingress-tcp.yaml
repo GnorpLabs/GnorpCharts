@@ -1,4 +1,4 @@
-{{- if .Values.ingressTCP.enabled -}}
+{{- if and .Values.ingressTCP.enabled (not .Values.auth.enabled) -}}
 {{- $fullName := include "agentmemory.fullname" . -}}
 {{/*
   Raw TCP exposure of the viewer through Traefik -- no auth, no secret.

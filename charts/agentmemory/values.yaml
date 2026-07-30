@@ -51,27 +51,11 @@ service:
     # Prometheus-style metrics.
     metrics: 9464
 
-# HTTP ingress for the viewer is DISABLED by design. An HTTP (hostname-based)
-# ingress would require the viewer to bind non-loopback, which agentmemory
-# v0.11.2 only allows with AGENTMEMORY_SECRET set -- and that same secret also
-# turns on auth for the whole REST/MCP API, which this deployment must keep
-# OPEN (mcp-gateway consumes it unauthenticated in-cluster).
-#
-# Instead the viewer is exposed via raw Traefik TCP entrypoints (see
-# templates/ingress-tcp.yaml + ingressTCP below). With no AGENTMEMORY_SECRET
-# the viewer binds loopback INSIDE the pod, so a small socat sidecar
-# (viewerProxy below) re-exposes it on the pod IP: Traefik TCP :3113 ->
-# Service viewer port -> sidecar :13113 -> 127.0.0.1:3113 (shared pod netns).
-# The live-update WebSocket worker (iii-stream, :3112) already binds
-# all-interfaces, so its TCP route goes straight to the pod. Result:
-#   http://<lan-host>:3113   viewer UI + server-side REST proxy (no auth)
-#   ws://<lan-host>:3112     live updates
-#
-# PREREQUISITE (one-time, global Traefik config -- not this chart): the k3s
-# Traefik HelmChartConfig must define TCP entrypoints "agentmemory" (:3113)
-# and "agentmemory-ws" (:3112). See GnorpLabs/k3s/traefik/traefik-config.yaml.
+# Ingress configuration for the viewer UI.
+# With auth enabled (auth.enabled=true), standard HTTP ingress is used.
+# With auth disabled, raw TCP ingress is required (see ingressTCP below).
 ingress:
-  enabled: false
+  enabled: true
   className: "traefik"
   annotations: {}
   host: "agentmemory.gnorplabs.cc"
@@ -79,20 +63,21 @@ ingress:
   pathType: ImplementationSpecific
   tls: []
 
-# Raw TCP exposure of the viewer through Traefik (no auth, no secret).
-# Renders two IngressRouteTCP objects targeting this chart's Service.
+# Raw TCP exposure of the viewer through Traefik (legacy/no-auth mode).
+# Only used when auth.enabled=false. When auth is enabled, use standard
+# HTTP ingress above instead.
 ingressTCP:
-  enabled: true
+  enabled: false
   # Traefik entrypoint names (must exist in the global Traefik config).
   viewerEntryPoint: "agentmemory"
   wsEntryPoint: "agentmemory-ws"
 
-# socat sidecar that forwards pod-IP traffic to the viewer's loopback-only
-# listener (127.0.0.1:3113). Listens on containerPort 13113; the Service's
-# viewer port targets it. Required because the no-secret viewer refuses to
-# bind non-loopback (see ingress comment above).
+# socat sidecar for no-auth mode (auth.enabled=false).
+# When auth is disabled, the viewer binds loopback-only (127.0.0.1:3113).
+# This sidecar exposes it on the pod network interface.
+# Automatically disabled when auth.enabled=true.
 viewerProxy:
-  enabled: true
+  enabled: false
   image: "alpine/socat:latest"
   listenPort: 13113
   resources:
@@ -143,21 +128,58 @@ config:
   # the ingress viewer hostname (auto-included when ingress.enabled).
   corsExtraOrigins: []
 
-# No AGENTMEMORY_SECRET and no AGENTMEMORY_VIEWER_HOST -- intentional.
-# With the secret unset, agentmemory v0.11.2 serves the entire REST/MCP API
-# fully open (checkAuth returns open when the secret is falsy), which is what
-# mcp-gateway needs for zero-auth in-cluster consumption. The viewer binds
-# loopback inside the pod and is re-exposed by the socat sidecar (viewerProxy).
-# Do NOT set AGENTMEMORY_SECRET: it would auth-gate the MCP API as a side
-# effect. Do NOT set AGENTMEMORY_VIEWER_HOST: a non-loopback value makes the
-# process fatally exit without a secret.
+# Authentication secret for the REST/MCP API and viewer.
+# The secret is a bearer token (random hex string, e.g., output of `openssl rand -hex 32`).
+# When enabled, authentication is required for both the API and viewer.
 #
-# VIEWER_ALLOWED_HOSTS extends the viewer's Host-header allowlist (the viewer
-# 403s "forbidden host" otherwise). It is gate-free -- setting it does NOT
-# require the secret. Must contain every host:port the browser will use.
+# Four ways to provide the secret:
+#
+# 1. Auto-generate (recommended for initial setup):
+#    auth:
+#      enabled: true
+#      autoGenerate: true
+#    A random secret is generated and stored in K8s Secret "<release>-auth".
+#    Extract it with: kubectl get secret <release>-auth -n <namespace> -o jsonpath='{.data.agentmemory-secret}' | base64 -d
+#
+# 2. Manual secret (generate your own):
+#    auth:
+#      enabled: true
+#      autoGenerate: false
+#      secret: "your-64-char-hex-string-here"
+#    Generate with: openssl rand -hex 32
+#
+# 3. Token replacement (GitOps pattern):
+#    auth:
+#      enabled: true
+#      autoGenerate: false
+#      secret: "__AGENTMEMORY_SECRET__"
+#    Your CI/CD replaces __AGENTMEMORY_SECRET__ with the actual value from secrets.
+#
+# 4. Existing K8s Secret:
+#    auth:
+#      enabled: true
+#      existingSecret: "my-secret-name"
+#    The secret must have a key named "agentmemory-secret" containing the bearer token.
+#
+auth:
+  enabled: true
+  # Auto-generate a random secret on first install (stored in k8s Secret).
+  # Set to false to provide your own secret via one of the methods above.
+  autoGenerate: true
+  # Use an existing K8s Secret instead of auto-generating or providing inline.
+  # If set, autoGenerate and secret are ignored.
+  # The secret must contain a key named "agentmemory-secret".
+  existingSecret: ""
+  # Manually specify the secret value (only used if autoGenerate=false and existingSecret="").
+  # Can be a raw value, or a token like "__AGENTMEMORY_SECRET__" for replacement.
+  secret: ""
+
 env:
   TZ: "UTC"
   VIEWER_ALLOWED_HOSTS: "localhost:3113,agentmemory.gnorplabs.cc:3113"
+  # When auth is enabled, the viewer can bind to all interfaces.
+  # When disabled, viewer binds loopback only (requires socat sidecar).
+  AGENTMEMORY_VIEWER_HOST: "0.0.0.0"
 
 # TODO: wire optional LLM/embedding provider keys (ANTHROPIC_API_KEY,
 # OPENAI_API_KEY, GEMINI_API_KEY, VOYAGE_API_KEY, etc.) via an
