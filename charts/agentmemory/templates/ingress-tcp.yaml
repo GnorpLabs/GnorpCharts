@@ -1,0 +1,47 @@
+{{- if and .Values.ingressTCP.enabled (not .Values.auth.enabled) -}}
+{{- $fullName := include "agentmemory.fullname" . -}}
+{{/*
+  Raw TCP exposure of the viewer through Traefik -- no auth, no secret.
+
+  Why TCP and not the HTTP ingress: agentmemory v0.11.2 only allows a
+  non-loopback viewer bind when AGENTMEMORY_SECRET is set, and that same
+  secret also auth-gates the whole REST/MCP API (which must stay open for
+  mcp-gateway). Raw TCP entrypoints + the socat sidecar avoid both.
+
+  PREREQUISITE: the global k3s Traefik HelmChartConfig must define the
+  entrypoints named below (see GnorpLabs/k3s/traefik/traefik-config.yaml).
+
+  - viewer route  -> Service viewer port (socat sidecar -> loopback viewer)
+  - ws route      -> Service stream port (iii-stream binds all interfaces)
+  HostSNI(`*`) is required for non-TLS TCP routers.
+*/}}
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: {{ $fullName }}-viewer
+  labels:
+    {{- include "agentmemory.labels" . | nindent 4 }}
+spec:
+  entryPoints:
+    - {{ .Values.ingressTCP.viewerEntryPoint }}
+  routes:
+    - match: HostSNI(`*`)
+      services:
+        - name: {{ $fullName }}
+          port: {{ .Values.service.ports.viewer }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: {{ $fullName }}-viewer-ws
+  labels:
+    {{- include "agentmemory.labels" . | nindent 4 }}
+spec:
+  entryPoints:
+    - {{ .Values.ingressTCP.wsEntryPoint }}
+  routes:
+    - match: HostSNI(`*`)
+      services:
+        - name: {{ $fullName }}
+          port: {{ .Values.service.ports.stream }}
+{{- end }}

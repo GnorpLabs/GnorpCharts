@@ -1,0 +1,234 @@
+# Default values for agentmemory.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/gnorplabs/agentmemory
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+# Namespace agentmemory is deployed into (shared with mcp-gateway, its
+# primary in-cluster consumer). This field is informational only; the actual
+# namespace is set at the helm/helmfile release level.
+namespace: "mcp-gateway"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+# The agentmemory image's own entrypoint (the `agentmemory` CLI) runs as
+# root and chowns /data to the `node` user before dropping privileges, so the
+# container must run as root (no forced runAsUser/runAsGroup/fsGroup). This
+# matches the mcp-gateway chart's empty security context.
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  ports:
+    # REST API + MCP HTTP surface. Consumed in-cluster (e.g. by mcp-gateway)
+    # via the Service DNS name; intentionally not exposed via ingress.
+    http: 3111
+    # Internal iii-engine stream worker. Not exposed externally.
+    stream: 3112
+    # Real-time viewer UI. The only port exposed via ingress.
+    viewer: 3113
+    # iii-engine websocket (worker registration). Not exposed externally.
+    engine: 49134
+    # Prometheus-style metrics.
+    metrics: 9464
+
+# Ingress configuration for the viewer UI.
+# With auth enabled (auth.enabled=true), standard HTTP ingress is used.
+# With auth disabled, raw TCP ingress is required (see ingressTCP below).
+ingress:
+  enabled: true
+  className: "traefik"
+  annotations: {}
+  host: "agentmemory.gnorplabs.cc"
+  path: /
+  pathType: ImplementationSpecific
+  tls: []
+
+# Raw TCP exposure of the viewer through Traefik (legacy/no-auth mode).
+# Only used when auth.enabled=false. When auth is enabled, use standard
+# HTTP ingress above instead.
+ingressTCP:
+  enabled: false
+  # Traefik entrypoint names (must exist in the global Traefik config).
+  viewerEntryPoint: "agentmemory"
+  wsEntryPoint: "agentmemory-ws"
+
+# socat sidecar for no-auth mode (auth.enabled=false).
+# When auth is disabled, the viewer binds loopback-only (127.0.0.1:3113).
+# This sidecar exposes it on the pod network interface.
+# Automatically disabled when auth.enabled=true.
+viewerProxy:
+  enabled: false
+  image: "alpine/socat:latest"
+  listenPort: 13113
+  resources:
+    requests: {cpu: 5m, memory: 8Mi}
+    limits: {cpu: 50m, memory: 32Mi}
+
+# MCP bridge sidecar: agentmemory's HTTP server exposes NO MCP JSON-RPC
+# endpoint (its /agentmemory/mcp/* paths are custom REST wrappers). The real
+# MCP interface is the stdio server (`agentmemory mcp`, aka @agentmemory/mcp).
+# This sidecar reuses the app image (node + agentmemory CLI already inside)
+# and runs supergateway to wrap that stdio server as Streamable HTTP on
+# `port` at path /mcp. mcp-gateway consumes it via:
+#   http://agentmemory.<ns>.svc.cluster.local:3114/mcp   (no auth)
+# The stdio server talks to the in-pod REST API via its default
+# AGENTMEMORY_URL=http://localhost:3111 (shared pod network namespace).
+mcpBridge:
+  enabled: true
+  port: 3114
+  # Pinned for reproducibility; npx fetches it at container start (needs
+  # registry access). Bake into the image later if cold-start matters.
+  supergatewayVersion: "3.4.3"
+  resources:
+    requests: {cpu: 25m, memory: 256Mi}
+    limits: {cpu: 500m, memory: 1Gi}
+
+# PVC for the /data directory (state store + stream store).
+persistence:
+  # Optionally specify claimName to manually override the PVC to be used.
+  # If claimName is specified, storageClass and size are ignored.
+  # claimName: ""
+  storageClass: "freenas-iscsi-csi"
+  size: 5Gi
+  accessMode: ReadWriteOnce
+
+# iii-engine config, rendered into a ConfigMap and mounted over
+# /app/config.yaml. This intentionally replaces the config baked into the
+# image (docker/agentmemory/iii-config.yaml in GnorpLabs), which has a
+# broken `host: [IP_ADDRESS]` placeholder on the iii-http/iii-stream
+# workers -- unquoted in YAML this parses as a one-item array, not a valid
+# bind address. This chart mirrors agentmemory's own known-working
+# iii-config.docker.yaml ([IP_ADDRESS] = all-interfaces bind) instead.
+config:
+  # Bind host for the iii-http / iii-stream workers. Leave empty to let
+  # iii-engine default to all-interfaces (so the pod IP is reachable by
+  # kubelet probes). Set to a specific address only if needed.
+  bindHost: ""
+  # Extra CORS allowed_origins appended alongside the localhost defaults and
+  # the ingress viewer hostname (auto-included when ingress.enabled).
+  corsExtraOrigins: []
+
+# Authentication secret for the REST/MCP API and viewer.
+# The secret is a bearer token (random hex string, e.g., output of `openssl rand -hex 32`).
+# When enabled, authentication is required for both the API and viewer.
+#
+# Four ways to provide the secret:
+#
+# 1. Auto-generate (recommended for initial setup):
+#    auth:
+#      enabled: true
+#      autoGenerate: true
+#    A random secret is generated and stored in K8s Secret "<release>-auth".
+#    Extract it with: kubectl get secret <release>-auth -n <namespace> -o jsonpath='{.data.agentmemory-secret}' | base64 -d
+#
+# 2. Manual secret (generate your own):
+#    auth:
+#      enabled: true
+#      autoGenerate: false
+#      secret: "your-64-char-hex-string-here"
+#    Generate with: openssl rand -hex 32
+#
+# 3. Token replacement (GitOps pattern):
+#    auth:
+#      enabled: true
+#      autoGenerate: false
+#      secret: "__AGENTMEMORY_SECRET__"
+#    Your CI/CD replaces __AGENTMEMORY_SECRET__ with the actual value from secrets.
+#
+# 4. Existing K8s Secret:
+#    auth:
+#      enabled: true
+#      existingSecret: "my-secret-name"
+#    The secret must have a key named "agentmemory-secret" containing the bearer token.
+#
+auth:
+  enabled: true
+  # Auto-generate a random secret on first install (stored in k8s Secret).
+  # Set to false to provide your own secret via one of the methods above.
+  autoGenerate: true
+  # Use an existing K8s Secret instead of auto-generating or providing inline.
+  # If set, autoGenerate and secret are ignored.
+  # The secret must contain a key named "agentmemory-secret".
+  existingSecret: ""
+  # Manually specify the secret value (only used if autoGenerate=false and existingSecret="").
+  # Can be a raw value, or a token like "__AGENTMEMORY_SECRET__" for replacement.
+  secret: ""
+
+env:
+  TZ: "UTC"
+  VIEWER_ALLOWED_HOSTS: "localhost:3113,agentmemory.gnorplabs.cc:3113"
+  # When auth is enabled, the viewer can bind to all interfaces.
+  # When disabled, viewer binds loopback only (requires socat sidecar).
+  AGENTMEMORY_VIEWER_HOST: "0.0.0.0"
+
+# TODO: wire optional LLM/embedding provider keys (ANTHROPIC_API_KEY,
+# OPENAI_API_KEY, GEMINI_API_KEY, VOYAGE_API_KEY, etc.) via an
+# existingSecret reference once needed. Intentionally left out of v1 --
+# agentmemory runs in BM25-only / zero-external-call mode without them.
+# providerSecrets:
+#   existingSecret: ""
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 500m
+  #   memory: 512Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 256Mi
+
+# Probes omit `host` so kubelet dials the pod IP directly. The chart's iii
+# config binds [IP_ADDRESS] (all interfaces), so the pod IP is reachable.
+startupProbe:
+  httpGet:
+    path: /agentmemory/livez
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 3
+  timeoutSeconds: 3
+  failureThreshold: 10
+
+livenessProbe:
+  httpGet:
+    path: /agentmemory/livez
+    port: http
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /agentmemory/livez
+    port: http
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

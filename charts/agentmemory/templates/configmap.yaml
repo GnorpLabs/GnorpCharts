@@ -1,0 +1,23 @@
+{{/*
+  ConfigMap is kept for CORS extra-origins injection only. The iii-config.yaml
+  that iii-engine actually reads is written by the image's entrypoint.sh at
+  /opt/agentmemory/node_modules/@agentmemory/agentmemory/dist/iii-config.yaml
+  with host: 0.0.0.0 so the pod IP is reachable for probes and Service traffic.
+
+  This ConfigMap is not mounted in the Deployment. It exists so that the chart
+  can be extended in future to inject additional CORS origins or other config
+  overrides via an init container if needed.
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "agentmemory.fullname" . }}-config
+  labels:
+    {{- include "agentmemory.labels" . | nindent 4 }}
+data:
+  # Extra CORS origins for the iii-http worker, if needed.
+  # Currently unused -- the entrypoint.sh writes a static config.
+  corsExtraOrigins: |
+    {{- range .Values.config.corsExtraOrigins }}
+    - {{ . | quote }}
+    {{- end }}

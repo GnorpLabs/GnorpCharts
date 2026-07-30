@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "agentmemory.fullname" . }}
+  labels:
+    {{- include "agentmemory.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.ports.http }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    - port: {{ .Values.service.ports.stream }}
+      targetPort: stream
+      protocol: TCP
+      name: stream
+    - port: {{ .Values.service.ports.viewer }}
+      {{- if .Values.viewerProxy.enabled }}
+      # Route through the socat sidecar: the no-secret viewer binds loopback
+      # inside the pod, so the pod-IP-facing listener is the sidecar.
+      targetPort: viewer-proxy
+      {{- else }}
+      targetPort: viewer
+      {{- end }}
+      protocol: TCP
+      name: viewer
+    - port: {{ .Values.service.ports.engine }}
+      targetPort: engine
+      protocol: TCP
+      name: engine
+    - port: {{ .Values.service.ports.metrics }}
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+    {{- if .Values.mcpBridge.enabled }}
+    # Streamable HTTP MCP endpoint (supergateway sidecar wrapping the stdio
+    # `agentmemory mcp` server). Consumed in-cluster by mcp-gateway.
+    - port: {{ .Values.mcpBridge.port }}
+      targetPort: mcp-bridge
+      protocol: TCP
+      name: mcp
+    {{- end }}
+  selector:
+    {{- include "agentmemory.selectorLabels" . | nindent 4 }}
