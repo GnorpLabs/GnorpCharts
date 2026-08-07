@@ -1,0 +1,96 @@
+name: PR Agent
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize]
+
+jobs:
+  pr_agent_job:
+    if: ${{ github.event.sender.type != 'Bot' }}
+    runs-on: ${{ github.event.repository.private && 'self-hosted' || 'ubuntu-latest' }}
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: write
+    name: Run PR Agent Review
+    steps:
+      - name: PR Agent action step
+        id: pragent
+        uses: the-pr-agent/pr-agent@v0.36.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENROUTER.KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          config.model: "openrouter/owl-alpha"
+          config.fallback_models: '["openrouter/qwen/qwen3-coder:free"]'
+          config.custom_model_max_tokens: "65536"
+          github_action_config.auto_review: "true"
+          github_action_config.auto_describe: "true"
+          github_action_config.auto_improve: "false"
+          github_action_config.handle_push_trigger: "true"
+          github_action_config.push_trigger_wait_for_initial_review: "true"
+
+  auto_approve:
+    needs: pr_agent_job
+    runs-on: ${{ github.event.repository.private && 'self-hosted' || 'ubuntu-latest' }}
+    permissions:
+      pull-requests: write
+      contents: read
+      issues: read
+    name: Auto-approve if review is clean
+    steps:
+      - name: Wait for PR-Agent review
+        run: sleep 30
+
+      - name: Check review and approve
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = context.payload.pull_request.number;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              per_page: 20,
+              sort: 'updated',
+              direction: 'desc',
+            });
+
+            const agentReviews = comments.filter(c =>
+              c.user.login === 'github-actions[bot]' &&
+              c.body.includes('PR Reviewer Guide')
+            );
+
+            if (agentReviews.length === 0) {
+              console.log('No PR-Agent review found, skipping');
+              return;
+            }
+
+            const body = agentReviews[0].body;
+
+            // Block auto-approval if security issues or critical findings
+            const hasSecurity = body.includes('possible security issue');
+            const hasCritical = body.includes('🔴') || body.includes('⛔');
+            const hasFindings = body.match(/Recommended focus areas[\s\S]*?<details>([\s\S]*?)<\/details>/i);
+            const hasRealFindings = hasFindings && hasFindings[1].trim().length > 100;
+
+            if (hasSecurity || hasCritical || hasRealFindings) {
+              console.log('Issues found, requesting changes');
+              await github.rest.pulls.createReview({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber,
+                event: 'REQUEST_CHANGES',
+                body: '🤖 PR-Agent found issues that should be addressed. Please review the findings above.',
+              });
+            } else {
+              console.log('Clean review, auto-approving');
+              await github.rest.pulls.createReview({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber,
+                event: 'APPROVE',
+                body: '🤖 PR-Agent auto-approval: No critical issues found.',
+              });
+            }
