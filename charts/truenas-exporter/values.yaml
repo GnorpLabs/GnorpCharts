@@ -1,0 +1,39 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/dariusbakunas/truenas-prometheus-exporter
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: false
+
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+
+# env vars passed directly to the container
+env: {}
+# TRUENAS_HOST: 192.168.0.164
+# TRUENAS_PROTOCOL: http
+
+# name of an existing Secret whose keys are injected as env vars (envFrom)
+envFromSecret: ""
+
+service:
+  port: 9108
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 64Mi
+  requests:
+    cpu: 20m
+    memory: 32Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

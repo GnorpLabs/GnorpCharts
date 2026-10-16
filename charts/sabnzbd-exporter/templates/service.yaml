@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sabnzbd-exporter.fullname" . }}
+  labels:
+    {{- include "sabnzbd-exporter.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+  selector:
+    {{- include "sabnzbd-exporter.selectorLabels" . | nindent 4 }}
