@@ -93,15 +93,43 @@ viewerProxy:
 #   http://agentmemory.<ns>.svc.cluster.local:3114/mcp   (no auth)
 # The stdio server talks to the in-pod REST API via its default
 # AGENTMEMORY_URL=http://localhost:3111 (shared pod network namespace).
+#
+# The sidecar MUST be given the same AGENTMEMORY_SECRET the main container
+# gets (the template wires it up when auth.enabled=true). Without the bearer
+# token the MCP shim cannot authenticate to the REST API and silently falls
+# back to STANDALONE mode, which is a trap in two ways:
+#   * every memory lands in /root/.agentmemory/standalone.json in this
+#     sidecar's own ephemeral container layer, so the whole store is lost
+#     every time the container restarts, and
+#   * only a hardcoded fallback tool list can be advertised, because the
+#     server's real tools/list endpoint answers 401.
+# The sidecar refuses to start if the secret is missing rather than degrade
+# silently.
 mcpBridge:
   enabled: true
   port: 3114
   # Pinned for reproducibility; npx fetches it at container start (needs
   # registry access). Bake into the image later if cold-start matters.
-  supergatewayVersion: "3.4.3"
+  #
+  # 4.x is a requirement, not a cosmetic bump. 3.x leaked one stdio child per
+  # request: supergateway did not reap the child when the request's session
+  # ended. The gateway health-checks this bridge every 30s, so the sidecar
+  # accumulated children until the cgroup OOM-killed it (exit 137), which
+  # closed port 3114, made the gateway's /health return 503, and failed the
+  # gateway's own liveness probe -- the kubelet then killed the gateway and
+  # took every healthy backend down with it.
+  # Measured against a stdio MCP server that rejects `ping` (as agentmemory
+  # does): 6 requests left 6 children alive on 3.4.3 and 0 on 4.2.0; 30
+  # requests left 0 children alive on 4.2.0.
+  # Do NOT use --stateful here: it makes supergateway answer a request that
+  # carries no session id with HTTP 400 ("No valid session ID provided"), and
+  # the gateway's health check is exactly such a request.
+  supergatewayVersion: "4.2.0"
   resources:
     requests: {cpu: 25m, memory: 256Mi}
-    limits: {cpu: 500m, memory: 1Gi}
+    # 2Gi: each `agentmemory mcp` child is its own Node process, so the
+    # sidecar needs headroom while a child is starting.
+    limits: {cpu: 500m, memory: 2Gi}
 
 # PVC for the /data directory (state store + stream store).
 persistence:

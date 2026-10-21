@@ -108,16 +108,40 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["sh", "-c"]
           args:
-            - >-
-              cd /tmp &&
-              exec npx -y supergateway@{{ .Values.mcpBridge.supergatewayVersion }}
-              --stdio "agentmemory mcp"
-              --outputTransport streamableHttp
-              --port {{ .Values.mcpBridge.port }}
-              --healthEndpoint /healthz
+            - |
+              set -e
+              cd /tmp
+              {{- if .Values.auth.enabled }}
+              # Fail loudly rather than degrade silently: without the bearer
+              # token the MCP shim falls back to standalone mode, keeps every
+              # memory in this sidecar's ephemeral layer (lost on every
+              # restart) and can only advertise a hardcoded fallback tool
+              # list.
+              if [ -z "${AGENTMEMORY_SECRET:-}" ]; then
+                echo "FATAL: AGENTMEMORY_SECRET is not set in the mcp-bridge sidecar." >&2
+                echo "The MCP shim would fall back to standalone mode: every memory would be written to the sidecar's ephemeral filesystem and lost on each restart, and only a hardcoded fallback tool list could be advertised." >&2
+                exit 1
+              fi
+              {{- end }}
+              exec npx -y supergateway@{{ .Values.mcpBridge.supergatewayVersion }} \
+                --stdio "agentmemory mcp" \
+                --outputTransport streamableHttp \
+                --port {{ .Values.mcpBridge.port }} \
+                --healthEndpoint /healthz
           env:
             - name: TZ
               value: {{ .Values.env.TZ | quote }}
+            {{- if .Values.auth.enabled }}
+            # Same bearer token the main container uses. The stdio MCP shim
+            # authenticates to the in-pod REST API on localhost:3111 with it.
+            # Without it the shim cannot authenticate and drops into
+            # standalone mode -- see the mcpBridge notes in values.yaml.
+            - name: AGENTMEMORY_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.auth.existingSecret | default (printf "%s-auth" (include "agentmemory.fullname" .)) }}
+                  key: agentmemory-secret
+            {{- end }}
           ports:
             - name: mcp-bridge
               containerPort: {{ .Values.mcpBridge.port }}
@@ -127,10 +151,13 @@ spec:
               path: /healthz
               port: mcp-bridge
             # npx downloads supergateway on first start; allow ample time.
+            # 36 * 5s = 180s: the pinned supergateway release plus the
+            # `agentmemory mcp` child it spawns both have to come up before
+            # the bridge answers.
             initialDelaySeconds: 5
             periodSeconds: 5
             timeoutSeconds: 3
-            failureThreshold: 24
+            failureThreshold: 36
           livenessProbe:
             httpGet:
               path: /healthz

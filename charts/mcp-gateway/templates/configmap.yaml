@@ -7,7 +7,10 @@ metadata:
 data:
   gateway.yaml: |
     {{- /* Start from gateway values, strip chart-internal keys */ -}}
-    {{- $config := omit .Values.gateway "env" "envFromSecrets" | deepCopy -}}
+    {{- /* waitForBackends is a chart-only concern (it drives the initContainer),
+           and the gateway refuses unknown config keys at startup, so it must
+           not reach gateway.yaml */ -}}
+    {{- $config := omit .Values.gateway "env" "envFromSecrets" "waitForBackends" | deepCopy -}}
     {{- /* Seed the backends map from any user-defined gateway.backends */ -}}
     {{- $backends := $config.backends | default dict | deepCopy -}}
     {{- /* Auto-inject HTTP backends */ -}}

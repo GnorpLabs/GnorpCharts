@@ -49,14 +49,33 @@ resources:
     cpu: 100m
     memory: 128Mi
 
+# Probes are deliberately PROCESS-ONLY (a TCP connect to the listener).
+#
+# They must not use the gateway's /health endpoint. /health aggregates backend
+# health and answers 503 as soon as ANY backend is unhealthy, so a
+# backend-aware liveness probe turns one sick backend into a full gateway
+# outage: the kubelet kills a perfectly healthy gateway, and with
+# replicaCount: 1 and strategy: Recreate that is a total outage plus a cold
+# tool cache on every restart (the gateway's tool warm-start is one-shot, so
+# a backend that is not up yet stays at 0 tools).
+#
+# The gateway already isolates a failing backend on its own: the failsafe
+# circuit breaker opens after failure_threshold failures, and the remaining
+# backends keep serving. Backend health belongs in the
+# mcp_gateway_circuit_breaker_state Prometheus metric, not in a pod probe.
+# /health stays available for humans and for load-balancer style checks.
 livenessProbe:
-  httpGet:
-    path: /health
+  tcpSocket:
     port: http
+  periodSeconds: 10
+  timeoutSeconds: 1
+  failureThreshold: 3
 readinessProbe:
-  httpGet:
-    path: /health
+  tcpSocket:
     port: http
+  periodSeconds: 10
+  timeoutSeconds: 1
+  failureThreshold: 3
 
 autoscaling:
   enabled: false
@@ -113,6 +132,32 @@ gateway:
     cacheTools: true
     cacheTtl: 300s
     warmStart: []
+  # Wait for the configured HTTP backends to accept connections before the
+  # gateway process starts.
+  #
+  # The gateway's tool warm-start is one-shot: it prefetches every backend's
+  # tool list at startup and never retries. A backend that is not listening
+  # yet is therefore left permanently at 0 tools -- it still shows as running
+  # and calls addressed to it by name still work, but it contributes nothing
+  # to the tool index, so gateway_search_tools never returns it.
+  #
+  # That race is easy to hit: the agentmemory mcp-bridge sidecar needs a
+  # minute or two to download supergateway and start, and the gateway
+  # container starts in seconds. This initContainer closes the gap. It waits
+  # only for backends that declare an http_url (a stdio backend is spawned
+  # by the gateway itself and has nothing to wait for), and it always starts
+  # the gateway once timeoutSeconds is up, so a backend that is simply down
+  # cannot wedge the deployment.
+  waitForBackends:
+    enabled: true
+    # Image used for the wait. It must provide a shell and either `nc`
+    # (busybox/gnu netcat) or `python3`. Defaults to the gateway image.
+    image: ""
+    timeoutSeconds: 180
+    # Per-connection timeout for the probe, in seconds.
+    probeTimeoutSeconds: 2
+    # Seconds between probe attempts.
+    intervalSeconds: 3
   failsafe:
     circuitBreaker:
       enabled: true
