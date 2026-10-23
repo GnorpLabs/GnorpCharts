@@ -32,8 +32,10 @@ spec:
       serviceAccountName: {{ include "mcp-gateway.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      {{- if .Values.stdioBackends.enabled }}
+      {{- $waitForBackends := .Values.gateway.waitForBackends | default dict }}
+      {{- if or .Values.stdioBackends.enabled $waitForBackends.enabled }}
       initContainers:
+        {{- if .Values.stdioBackends.enabled }}
         - name: setup-stdio-backends
           image: {{ .Values.stdioBackends.nodeImage }}
           command: ["sh", "-c"]
@@ -45,6 +47,90 @@ spec:
           volumeMounts:
             - name: npx-bin
               mountPath: /npx-bin
+        {{- end }}
+        {{- if $waitForBackends.enabled }}
+        # The gateway's tool warm-start is one-shot: it prefetches every
+        # backend's tool list once at startup and never retries. A backend
+        # that is not listening yet is left permanently at 0 tools, so it
+        # stays listed as running while contributing nothing to the tool
+        # index. This initContainer closes that race by holding the gateway
+        # process back until its HTTP backends accept connections. It always
+        # releases the gateway once timeoutSeconds is up, so a backend that
+        # is simply down cannot wedge the deployment.
+        - name: wait-for-backends
+          image: {{ $waitForBackends.image | default (printf "%s:%s" .Values.image.repository (.Values.image.tag | default .Chart.AppVersion)) | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -u
+              TIMEOUT="{{ $waitForBackends.timeoutSeconds }}"
+              INTERVAL="{{ $waitForBackends.intervalSeconds }}"
+              PROBE_TIMEOUT="{{ $waitForBackends.probeTimeoutSeconds }}"
+              deadline=$(( $(date +%s) + TIMEOUT ))
+
+              if ! command -v nc >/dev/null 2>&1 && ! command -v python3 >/dev/null 2>&1; then
+                echo "WARN: neither nc nor python3 is available in this image; skipping the backend wait" >&2
+                exit 0
+              fi
+
+              probe() {
+                host="$1"; port="$2"
+                if command -v nc >/dev/null 2>&1; then
+                  nc -z -w "$PROBE_TIMEOUT" "$host" "$port" >/dev/null 2>&1
+                else
+                  python3 -c 'import socket,sys;s=socket.socket();s.settimeout(float(sys.argv[3]));sys.exit(s.connect_ex((sys.argv[1],int(sys.argv[2]))))' "$host" "$port" "$PROBE_TIMEOUT"
+                fi
+              }
+
+              wait_for() {
+                name="$1"; host="$2"; port="$3"
+                while :; do
+                  if probe "$host" "$port"; then
+                    echo "backend $name ($host:$port) is reachable"
+                    return 0
+                  fi
+                  if [ "$(date +%s)" -ge "$deadline" ]; then
+                    echo "WARN: backend $name ($host:$port) is not reachable after ${TIMEOUT}s; starting the gateway anyway" >&2
+                    return 0
+                  fi
+                  sleep "$INTERVAL"
+                done
+              }
+              {{- range $name, $backend := .Values.gateway.backends }}
+              {{- if $backend.http_url }}
+              {{- $url := $backend.http_url }}
+              {{- $scheme := index (splitList ":" $url) 0 }}
+              {{- $hostport := index (splitList "/" $url) 2 }}
+              {{- $hp := splitList ":" $hostport }}
+              {{- $host := index $hp 0 }}
+              {{- $port := "80" }}
+              {{- if gt (len $hp) 1 }}
+              {{- $port = index $hp 1 }}
+              {{- else if eq $scheme "https" }}
+              {{- $port = "443" }}
+              {{- end }}
+              wait_for "{{ $name }}" "{{ $host }}" "{{ $port }}"
+              {{- end }}
+              {{- end }}
+              {{- range $backend := .Values.httpBackends }}
+              {{- if $backend.port }}
+              wait_for "{{ $backend.name }}" "{{ $backend.name }}" "{{ $backend.port }}"
+              {{- end }}
+              {{- end }}
+              echo "backend wait finished"
+          # Resource requests keep this out of the BestEffort QoS class: an
+          # initContainer with no requests is the first thing the kubelet
+          # evicts under node memory pressure, and a pod whose initContainer
+          # is evicted restarts from scratch.
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+        {{- end }}
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
