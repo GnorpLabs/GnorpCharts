@@ -1,0 +1,38 @@
+replicaCount: 1
+
+image:
+  repository: msroest/sabnzbd_exporter
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: false
+
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+
+# env vars passed directly to the container
+env: {}
+# SABNZBD_BASEURLS: http://sabnzbd.plex:8080
+
+# name of an existing Secret whose keys are injected as env vars (envFrom)
+envFromSecret: ""
+
+service:
+  port: 9387
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 64Mi
+  requests:
+    cpu: 20m
+    memory: 32Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
