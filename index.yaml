@@ -164,6 +164,16 @@ entries:
   mcp-gateway:
   - apiVersion: v2
     appVersion: latest
+    created: "2026-11-26T17:42:33.988258321Z"
+    description: A Helm chart for MCP Gateway - Universal MCP Gateway with Meta-MCP
+    digest: f866edfb8dd66116d99ba8ae688e6e3a8e6ff6238ff70f480f628ac628837811
+    name: mcp-gateway
+    type: application
+    urls:
+    - https://github.com/GnorpLabs/GnorpCharts/releases/download/mcp-gateway-0.4.0/mcp-gateway-0.4.0.tgz
+    version: 0.4.0
+  - apiVersion: v2
+    appVersion: latest
     created: "2026-10-23T15:18:55.101381077Z"
     description: A Helm chart for MCP Gateway - Universal MCP Gateway with Meta-MCP
     digest: b82dcf7f9c0426f5d87fcea388e177eb58db198430c8d3ed2d2f1471df89d75c
@@ -431,4 +441,4 @@ entries:
     urls:
     - https://github.com/GnorpLabs/GnorpCharts/releases/download/tautulli-0.1.0/tautulli-0.1.0.tgz
     version: 0.1.0
-generated: "2026-10-23T15:18:55.101419815Z"
+generated: "2026-11-26T17:42:33.988328947Z"
