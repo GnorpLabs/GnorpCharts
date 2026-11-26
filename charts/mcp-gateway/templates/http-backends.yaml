@@ -26,6 +26,12 @@ spec:
       containers:
         - name: {{ .name }}
           image: {{ .image }}
+          {{- if .command }}
+          command: {{ .command | toJson }}
+          {{- end }}
+          {{- if .args }}
+          args: {{ .args | toJson }}
+          {{- end }}
           ports:
             - name: mcp
               containerPort: {{ .port }}
